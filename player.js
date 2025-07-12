@@ -150,6 +150,9 @@ document.addEventListener('DOMContentLoaded', () => {
   console.error("Audio error:", e);
 };
 
+  // 在 updatePlayer 函数中
+  const workerDomain = "https://music.stevel.eu.org";
+
   // 启动播放器
   initPlayer();
 });
