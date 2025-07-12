@@ -145,6 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('lastSongTime', audioElement.currentTime);
   };
 
+   // 错误处理
+  audioElement.onerror = (e) => {
+  console.error("Audio error:", e);
+};
+
   // 启动播放器
   initPlayer();
 });
