@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 核心修复点：对原始文件名进行编码，而不是对已编码的字符串再次编码
       const encodedFile = encodeURIComponent(song.file);
-      this.dom.audio.src = `https://music.stevel.eu.org/${encodedFile}`;
+      this.dom.audio.src = `https://music.stevel.eu.org/${song.file}`;
       
       // 等待元数据加载完毕再设置时间和播放
       this.dom.audio.onloadedmetadata = () => {
