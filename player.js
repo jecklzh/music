@@ -143,7 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       this.dom.title.textContent = song.title;
       this.dom.tags.textContent = song.tags.join(', ');
-      this.dom.audio.src = `https://music.stevel.eu.org/${encodeURIComponent(song.file)}`;
+      const encodedFile = encodeURIComponent(song.file);
+      this.dom.audio.src = `https://music.stevel.eu.org/${encodedFile}`;
+
 
       this.dom.audio.onloadedmetadata = () => {
         this.dom.audio.currentTime = startTime;
