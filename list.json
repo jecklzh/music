@@ -40,8 +40,8 @@
     "tags": ["relax","日文","抒情"]
   },
   {
-    "title": "日本ACG-TAKE ME HIGHER",
-    "file": "日本ACG-TAKE_ME_HIGHER.mp3",
+    "title": "V6-TAKE ME HIGHER",
+    "file": "V6-TAKE_ME_HIGHER.mp3",
     "tags": ["奥特曼","日文","迪迦","power"]
   },
   {
@@ -63,6 +63,26 @@
     "title": "矢野立美-その名は“ウルトラマンティガ”",
     "file": "矢野立美-名字叫_迪迦奥特曼.mp3",
     "tags": ["奥特曼","纯音乐","迪迦","沉浸"]
+  },
+    {
+    "title": "和田光司 Butter-Fly",
+    "file": "和田光司-Butter_Fly.mp3",
+    "tags": ["动漫","数码暴龙","经典"]
+  },
+  {
+    "title": "福克斯-庆功酒",
+    "file": "福克斯-庆功酒.mp3",
+    "tags": ["华语","说唱"]
+  },
+  {
+    "title": "Gilda Buttà-Tarantella in Third Class",
+    "file": "Gilda_Butta-Tarantella_in_Third_Class.mp3",
+    "tags": ["海上钢琴师","纯音乐","轻快"]
+  },
+  {
+    "title": "Gilda Buttà-5 Portraits",
+    "file": "Gilda_Butta-5_Portraits.mp3",
+    "tags": ["海上钢琴师","纯音乐"]
   }
-  
+
 ]
