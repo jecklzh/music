@@ -1,156 +1,226 @@
-// ✅ 播放器脚本，支持标签组合惩罚、播放原谅、稳定推荐
+document.addEventListener('DOMContentLoaded', () => {
+  const Recommender = {
+    skipHistory: {},
 
-const audio = document.getElementById('audio');
-let currentIndex = null;
-let historyStack = [];
-let skipHistory = JSON.parse(localStorage.getItem('skipHistory') || '{}');
+    init() {
+      this.skipHistory = JSON.parse(localStorage.getItem('skipHistory') || '{}');
+    },
 
-function generateTagCombos(tags) {
-  const combos = [];
-  for (let i = 0; i < tags.length; i++) {
-    for (let j = i + 1; j < tags.length; j++) {
-      combos.push(`${tags[i]}|${tags[j]}`);
+    save() {
+      localStorage.setItem('skipHistory', JSON.stringify(this.skipHistory));
+    },
+
+    getCombos(tags) {
+      const combos = [];
+      for (let i = 0; i < tags.length; i++) {
+        for (let j = i + 1; j < tags.length; j++) {
+          combos.push(`${tags[i]}|${tags[j]}`);
+        }
+      }
+      return combos;
+    },
+
+    recordSkip(tags) {
+      tags.forEach(tag => {
+        const base = this.skipHistory[tag] || 0;
+        this.skipHistory[tag] = Math.min(base + 0.5, 10);
+      });
+      this.getCombos(tags).forEach(combo => {
+        const base = this.skipHistory[combo] || 0;
+        const inc = base * 0.3 + 1;
+        this.skipHistory[combo] = Math.min(base + inc, 15);
+      });
+      this.save();
+    },
+
+    recordCompleted(tags) {
+      tags.forEach(tag => {
+        if (this.skipHistory[tag]) this.skipHistory[tag] *= 0.5;
+      });
+      this.getCombos(tags).forEach(combo => {
+        if (this.skipHistory[combo]) this.skipHistory[combo] *= 0.3;
+      });
+      this.save();
+    },
+
+    computeWeight(song) {
+      let weight = 1;
+      song.tags.forEach(tag => {
+        weight -= (this.skipHistory[tag] || 0) * 0.1;
+      });
+      this.getCombos(song.tags).forEach(combo => {
+        weight -= (this.skipHistory[combo] || 0) * 0.3;
+      });
+      return Math.max(weight, 0.1);
+    },
+
+    pick(list) {
+      const weights = list.map((song, idx) => ({ idx, weight: this.computeWeight(song) }));
+      const total = weights.reduce((sum, w) => sum + w.weight, 0);
+      const rand = Math.random() * total;
+      let acc = 0;
+      for (const w of weights) {
+        acc += w.weight;
+        if (rand < acc) return w.idx;
+      }
+      return 0;
     }
-  }
-  return combos;
-}
-
-audio.ontimeupdate = () => {
-  if (currentIndex !== null) {
-    localStorage.setItem('lastSongIndex', currentIndex);
-    localStorage.setItem('lastSongTime', audio.currentTime);
-  }
-};
-
-audio.onended = () => {
-  const song = musicList[currentIndex];
-  song.tags.forEach(tag => {
-    if (skipHistory[tag]) skipHistory[tag] *= 0.5;
-  });
-  generateTagCombos(song.tags).forEach(combo => {
-    if (skipHistory[combo]) skipHistory[combo] *= 0.3;
-  });
-  localStorage.setItem('skipHistory', JSON.stringify(skipHistory));
-};
-
-function updatePlayer(song, startTime = 0) {
-  document.getElementById('song-title').textContent = song.title;
-  document.getElementById('song-tags').textContent = song.tags.join(', ');
-  audio.src = song.file;
-  audio.onloadedmetadata = () => {
-    audio.currentTime = startTime;
-    audio.play();
   };
-  renderRelatedSongs(song);
-}
 
-function pickNextSong() {
-  const weights = musicList.map((song, idx) => {
-    let weight = 1;
+  const MusicPlayer = {
+    state: {
+      currentIndex: 0,
+      musicList: [],
+      historyStack: [],
+    },
 
-    song.tags.forEach(tag => {
-      const penalty = skipHistory[tag] || 0;
-      weight -= penalty * 0.1;
-    });
+    dom: {
+      audio: document.getElementById('audio'),
+      title: document.getElementById('song-title'),
+      tags: document.getElementById('song-tags'),
+      relatedContainer: document.getElementById('related-songs'),
+      searchResults: document.getElementById('search-results'),
+      searchInput: document.getElementById('tag-search'),
+      prevBtn: document.getElementById('prev-btn'),
+      nextBtn: document.getElementById('next-btn'),
+    },
 
-    const combos = generateTagCombos(song.tags);
-    combos.forEach(combo => {
-      const comboPenalty = skipHistory[combo] || 0;
-      weight -= comboPenalty * 0.3;
-    });
+    async init() {
+      console.log('Player initializing...');
+      Recommender.init();
+      await this.loadMusicList();
+      this.bindEvents();
 
-    return { idx, weight: Math.max(weight, 0.1) };
-  });
+      const lastIndex = localStorage.getItem('lastSongIndex');
+      const lastTime = parseFloat(localStorage.getItem('lastSongTime') || 0);
 
-  const total = weights.reduce((sum, w) => sum + w.weight, 0);
-  const rand = Math.random() * total;
-  let acc = 0;
-  for (const w of weights) {
-    acc += w.weight;
-    if (rand < acc) return w.idx;
-  }
-  return 0;
-}
+      if (lastIndex !== null && this.state.musicList[lastIndex]) {
+        this.updatePlayer(parseInt(lastIndex), lastTime);
+      } else if (this.state.musicList.length > 0) {
+        this.playNext();
+      } else {
+        this.dom.title.textContent = "音乐列表为空";
+      }
+    },
 
-function skipSong() {
-  if (currentIndex !== null) {
-    const song = musicList[currentIndex];
-    song.tags.forEach(tag => {
-      const base = skipHistory[tag] || 0;
-      skipHistory[tag] = Math.min(base + 0.5, 10);
-    });
-    generateTagCombos(song.tags).forEach(combo => {
-      const base = skipHistory[combo] || 0;
-      const inc = base * 0.3 + 1;
-      skipHistory[combo] = Math.min(base + inc, 15);
-    });
-    localStorage.setItem('skipHistory', JSON.stringify(skipHistory));
-    historyStack.push(currentIndex);
-  }
-  localStorage.removeItem('lastSongIndex');
-  localStorage.removeItem('lastSongTime');
-  currentIndex = pickNextSong();
-  updatePlayer(musicList[currentIndex]);
-}
+    async loadMusicList() {
+      try {
+        const response = await fetch('list.json');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        this.state.musicList = await response.json();
+        console.log('Music list loaded:', this.state.musicList);
+      } catch (error) {
+        console.error('加载音乐列表失败:', error);
+        this.dom.title.textContent = "加载列表失败";
+      }
+    },
 
-function prevSong() {
-  if (historyStack.length > 0) {
-    currentIndex = historyStack.pop();
-    updatePlayer(musicList[currentIndex]);
-  }
-}
+    bindEvents() {
+      this.dom.prevBtn.addEventListener('click', () => this.playPrevious());
+      this.dom.nextBtn.addEventListener('click', () => {
+        Recommender.recordSkip(this.state.musicList[this.state.currentIndex].tags);
+        this.playNext();
+      });
+      this.dom.searchInput.addEventListener('input', () => this.handleSearch());
 
-function renderRelatedSongs(currentSong) {
-  const container = document.getElementById('related-songs');
-  container.innerHTML = '';
-  const related = musicList.filter((song, idx) => {
-    if (song === currentSong) return false;
-    return song.tags.some(tag => currentSong.tags.includes(tag));
-  }).slice(0, 3);
-  related.forEach(song => {
-    const div = document.createElement('div');
-    div.className = 'related-song';
-    div.textContent = `${song.title} (${song.tags.join(', ')})`;
-    div.onclick = () => {
-      historyStack.push(currentIndex);
-      localStorage.removeItem('lastSongIndex');
-      localStorage.removeItem('lastSongTime');
-      currentIndex = musicList.indexOf(song);
-      updatePlayer(song);
-    };
-    container.appendChild(div);
-  });
-}
+      this.dom.audio.addEventListener('ended', () => {
+        Recommender.recordCompleted(this.state.musicList[this.state.currentIndex].tags);
+        this.playNext();
+      });
+      this.dom.audio.addEventListener('timeupdate', () => this.savePlaybackPosition());
+      this.dom.audio.addEventListener('contextmenu', e => e.preventDefault());
+      this.dom.audio.onerror = () => {
+        console.error("音频播放错误:", this.dom.audio.error);
+        this.dom.title.textContent = "音频加载失败, 5秒后尝试下一首...";
+        setTimeout(() => this.playNext(), 5000);
+      };
+    },
 
-function searchByTag() {
-  const input = document.getElementById('tag-search').value.trim();
-  const resultBox = document.getElementById('search-results');
-  resultBox.innerHTML = '';
-  if (input === '') return;
+    updatePlayer(index, startTime = 0) {
+      if (!this.state.musicList[index]) return;
+      this.state.currentIndex = index;
+      const song = this.state.musicList[index];
 
-  const results = musicList.filter(song =>
-    song.tags.some(tag => tag.includes(input))
-  ).slice(0, 6);
+      this.dom.title.textContent = song.title;
+      this.dom.tags.textContent = song.tags.join(', ');
+      this.dom.audio.src = `https://music.stevel.eu.org/${encodeURIComponent(song.file)}`;
 
-  results.forEach(song => {
-    const div = document.createElement('div');
-    div.className = 'search-result-item';
-    div.textContent = `${song.title} (${song.tags.join(', ')})`;
-    div.onclick = () => {
-      historyStack.push(currentIndex);
-      localStorage.removeItem('lastSongIndex');
-      localStorage.removeItem('lastSongTime');
-      currentIndex = musicList.indexOf(song);
-      updatePlayer(song);
-    };
-    resultBox.appendChild(div);
-  });
-}
+      this.dom.audio.onloadedmetadata = () => {
+        this.dom.audio.currentTime = startTime;
+        this.dom.audio.play().catch(e => console.warn('自动播放失败:', e));
+      };
 
-if (localStorage.getItem('lastSongIndex')) {
-  currentIndex = parseInt(localStorage.getItem('lastSongIndex'));
-  const time = parseFloat(localStorage.getItem('lastSongTime') || 0);
-  updatePlayer(musicList[currentIndex], time);
-} else {
-  skipSong();
-}
+      this.renderRelatedSongs(song);
+    },
+
+    playSongByIndex(index) {
+      this.state.historyStack.push(this.state.currentIndex);
+      this.updatePlayer(index);
+    },
+
+    playNext() {
+      const nextIndex = Recommender.pick(this.state.musicList);
+      this.state.historyStack.push(this.state.currentIndex);
+      this.updatePlayer(nextIndex);
+    },
+
+    playPrevious() {
+      if (this.state.historyStack.length > 0) {
+        const prevIndex = this.state.historyStack.pop();
+        this.updatePlayer(prevIndex);
+      }
+    },
+
+    renderRelatedSongs(currentSong) {
+      this.dom.relatedContainer.innerHTML = '';
+      const related = this.state.musicList.filter(song =>
+        song.file !== currentSong.file &&
+        song.tags.some(tag => currentSong.tags.includes(tag))
+      ).slice(0, 5);
+
+      related.forEach(song => {
+        const songElement = document.createElement('div');
+        songElement.className = 'related-song';
+        songElement.innerHTML = `${song.title} <span class="song-tags">(${song.tags.join(', ')})</span>`;
+        songElement.addEventListener('click', () => {
+          const songIndex = this.state.musicList.findIndex(item => item.file === song.file);
+          if (songIndex !== -1) this.playSongByIndex(songIndex);
+        });
+        this.dom.relatedContainer.appendChild(songElement);
+      });
+    },
+
+    handleSearch() {
+      const query = this.dom.searchInput.value.trim().toLowerCase();
+      this.dom.searchResults.innerHTML = '';
+      if (!query) return;
+
+      const results = this.state.musicList.filter(song =>
+        song.title.toLowerCase().includes(query) ||
+        song.tags.some(tag => tag.toLowerCase().includes(query))
+      ).slice(0, 5);
+
+      results.forEach(song => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'search-result-item';
+        resultItem.innerHTML = `${song.title} <span class="song-tags">${song.tags.join(', ')}</span>`;
+        resultItem.addEventListener('click', () => {
+          const songIndex = this.state.musicList.findIndex(item => item.file === song.file);
+          if (songIndex !== -1) this.playSongByIndex(songIndex);
+          this.dom.searchInput.value = '';
+          this.dom.searchResults.innerHTML = '';
+        });
+        this.dom.searchResults.appendChild(resultItem);
+      });
+    },
+
+    savePlaybackPosition() {
+      if (!isNaN(this.dom.audio.currentTime) && this.dom.audio.currentTime > 0) {
+        localStorage.setItem('lastSongIndex', this.state.currentIndex);
+        localStorage.setItem('lastSongTime', this.dom.audio.currentTime);
+      }
+    },
+  };
+
+  MusicPlayer.init();
+});
