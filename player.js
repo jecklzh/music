@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     recordCompleted(tags) {
+      this.currentPreferredTags = tags;  // 保存当前歌的标签用于引导
       tags.forEach(tag => {
         if (this.skipHistory[tag]) this.skipHistory[tag] *= 0.5;
       });
@@ -42,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (this.skipHistory[combo]) this.skipHistory[combo] *= 0.3;
       });
       this.save();
-    },
+    }
 
     computeWeight(song) {
       const tags = song.tags;
@@ -62,10 +63,21 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       const avgPenalty = totalCount > 0 ? totalPenalty / totalCount : 0;
-      const weight = Math.max(1 - avgPenalty, 0.1);
+      const baseWeight = Math.max(1 - avgPenalty, 0.1);
 
-      return weight;
-    },
+      //  标签引导逻辑
+      let tagBonus = 0;
+      if (Array.isArray(this.currentPreferredTags)) {
+        const overlap = tags.filter(t => this.currentPreferredTags.includes(t)).length;
+        tagBonus = overlap / tags.length;  // 标签重合比例作为 bonus
+      }
+
+      //  最终权重：80% 历史权重 + 20% 当前倾向
+      const finalWeight = baseWeight * 0.22 + tagBonus * 0.78;
+
+      return Math.max(finalWeight, 0.1);
+    }
+
 
     pick(list) {
       const weights = list.map((song, idx) => ({ idx, weight: this.computeWeight(song) }));
