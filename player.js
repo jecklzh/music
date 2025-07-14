@@ -44,15 +44,27 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     computeWeight(song) {
-      let weight = 1;
-      song.tags.forEach(tag => {
-        weight -= (this.skipHistory[tag] || 0) * 0.1;
+      const tags = song.tags;
+      const combos = this.getCombos(tags);
+
+      let totalPenalty = 0;
+      let totalCount = 0;
+
+      tags.forEach(tag => {
+        totalPenalty += (this.skipHistory[tag] || 0) * 0.1;
+        totalCount++;
       });
-      this.getCombos(song.tags).forEach(combo => {
-        weight -= (this.skipHistory[combo] || 0) * 0.3;
+
+      combos.forEach(combo => {
+        totalPenalty += (this.skipHistory[combo] || 0) * 0.3;
+        totalCount++;
       });
-      return Math.max(weight, 0.1);
-    },
+
+      const avgPenalty = totalCount > 0 ? totalPenalty / totalCount : 0;
+      const weight = Math.max(1 - avgPenalty, 0.1);
+
+      return weight;
+    }，
 
     pick(list) {
       const weights = list.map((song, idx) => ({ idx, weight: this.computeWeight(song) }));
