@@ -158,25 +158,21 @@ document.addEventListener('DOMContentLoaded', () => {
     playSongByIndex(index) {
       this.state.historyStack.push(this.state.currentIndex);
       this.updatePlayer(index);
+      if ('mediaSession' in navigator) {
+        const song = this.state.musicList[index];
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: song.title
+        });
 
-      // MediaSession 配置延迟执行，避免在 updatePlayer 里还没绑定 audio
-      this.dom.audio.onplay = () => {
-        if ('mediaSession' in navigator) {
-          const song = this.state.musicList[index];
-          navigator.mediaSession.metadata = new MediaMetadata({
-            title: song.title
-          });
-
-          navigator.mediaSession.setActionHandler('play', () => this.dom.audio.play());
-          navigator.mediaSession.setActionHandler('pause', () => this.dom.audio.pause());
-          navigator.mediaSession.setActionHandler('previoustrack', () => this.playPrevious());
-          navigator.mediaSession.setActionHandler('nexttrack', () => {
-            Recommender.recordSkip(song.tags);
-            this.playNext();
-          });
-        }
-      };
-    }
+      navigator.mediaSession.setActionHandler('play', () => this.dom.audio.play());
+      navigator.mediaSession.setActionHandler('pause', () => this.dom.audio.pause());
+      navigator.mediaSession.setActionHandler('previoustrack', () => this.playPrevious());
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        Recommender.recordSkip(song.tags);
+        this.playNext();
+      });
+      }
+    },
 
     playNext() {
       const nextIndex = Recommender.pick(this.state.musicList);
