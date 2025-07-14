@@ -158,6 +158,20 @@ document.addEventListener('DOMContentLoaded', () => {
     playSongByIndex(index) {
       this.state.historyStack.push(this.state.currentIndex);
       this.updatePlayer(index);
+      if ('mediaSession' in navigator) {
+        const song = this.state.musicList[index];
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: song.title
+        });
+
+      navigator.mediaSession.setActionHandler('play', () => this.dom.audio.play());
+      navigator.mediaSession.setActionHandler('pause', () => this.dom.audio.pause());
+      navigator.mediaSession.setActionHandler('previoustrack', () => this.playPrevious());
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        Recommender.recordSkip(song.tags);
+        this.playNext();
+      });
+      }
     },
 
     playNext() {
