@@ -2,7 +2,7 @@
   {
     "title": "RIOPY-Wyden Down",
     "file": "RIOPY-Wyden_Down.mp3",
-    "tags": ["旋律", "钢琴","纯音乐"]
+    "tags": ["沉浸", "钢琴","纯音乐"]
   },
   {
     "title": "Silent Partner-Bright Future",
@@ -12,12 +12,12 @@
   {
     "title": "温かな振り返り",
     "file": "温暖的反思.mp3",
-    "tags": ["relax","日文","抒情"]
+    "tags": ["relax","日文"]
   },
   {
     "title": "月夜のさざなみ",
     "file": "月夜涟漪.mp3",
-    "tags": ["relax","日文","抒情"]
+    "tags": ["relax","日文"]
   },
   {
     "title": "星の海",
@@ -27,16 +27,42 @@
   {
     "title": "青い月",
     "file": "蓝月亮.mp3",
-    "tags": ["relax","日文","抒情"]
+    "tags": ["relax","日文"]
   },
   {
     "title": "夢の中で",
     "file": "在梦里.mp3",
-    "tags": ["relax","日文","抒情"]
+    "tags": ["relax","日文","轻快"]
   },
   {
     "title": "一生の君と",
     "file": "一生一世与你相伴.mp3",
     "tags": ["relax","日文","抒情"]
+  },
+  {
+    "title": "日本ACG-TAKE ME HIGHER",
+    "file": "日本ACG-TAKE_ME_HIGHER.mp3",
+    "tags": ["奥特曼","日文","迪迦","power"]
+  },
+  {
+    "title": "矢野立美-Brave Love TIGA",
+    "file": "矢野立美-Brave_Love_TIGA.mp3",
+    "tags": ["奥特曼","日文","迪迦","沉浸"]
+  },
+  {
+    "title": "矢野立美-LOVE Theme from TIGA",
+    "file": "矢野立美-LOVE_Theme_from_TIGA.mp3",
+    "tags": ["奥特曼","纯音乐","迪迦","抒情"]
+  },
+  {
+    "title": "矢野立美-爱のテーマ",
+    "file": "矢野立美-爱的主题曲.mp3",
+    "tags": ["奥特曼","纯音乐","迪迦","抒情"]
+  },
+  {
+    "title": "矢野立美-その名は“ウルトラマンティガ”",
+    "file": "矢野立美-名字叫_迪迦奥特曼.mp3",
+    "tags": ["奥特曼","纯音乐","迪迦","沉浸"]
   }
+  
 ]
