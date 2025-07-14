@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', () => {
   const Recommender = {
     skipHistory: {},
@@ -64,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const weight = Math.max(1 - avgPenalty, 0.1);
 
       return weight;
-    }，
+    },
 
     pick(list) {
       const weights = list.map((song, idx) => ({ idx, weight: this.computeWeight(song) }));
@@ -129,18 +130,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     bindEvents() {
       this.dom.prevBtn.addEventListener('click', () => this.playPrevious());
+
       this.dom.nextBtn.addEventListener('click', () => {
-        Recommender.recordSkip(this.state.musicList[this.state.currentIndex].tags);
+        const song = this.state.musicList[this.state.currentIndex];
+        const audio = this.dom.audio;
+        if (!isNaN(audio.duration) && audio.currentTime < audio.duration * 0.5) {
+          Recommender.recordSkip(song.tags);
+        }
         this.playNext();
       });
+
       this.dom.searchInput.addEventListener('input', () => this.handleSearch());
 
       this.dom.audio.addEventListener('ended', () => {
         Recommender.recordCompleted(this.state.musicList[this.state.currentIndex].tags);
         this.playNext();
       });
+
       this.dom.audio.addEventListener('timeupdate', () => this.savePlaybackPosition());
+
       this.dom.audio.addEventListener('contextmenu', e => e.preventDefault());
+
       this.dom.audio.onerror = () => {
         console.error("音频播放错误:", this.dom.audio.error);
         this.dom.title.textContent = "音频加载失败, 5秒后尝试下一首...";
@@ -155,7 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       this.dom.title.textContent = song.title;
       this.dom.tags.textContent = song.tags.join(', ');
-      
       const encodedFile = encodeURIComponent(song.file);
       this.dom.audio.src = `https://music.stevel.eu.org/${encodedFile}`;
 
@@ -170,20 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
     playSongByIndex(index) {
       this.state.historyStack.push(this.state.currentIndex);
       this.updatePlayer(index);
-      if ('mediaSession' in navigator) {
-        const song = this.state.musicList[index];
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: song.title
-        });
-
-      navigator.mediaSession.setActionHandler('play', () => this.dom.audio.play());
-      navigator.mediaSession.setActionHandler('pause', () => this.dom.audio.pause());
-      navigator.mediaSession.setActionHandler('previoustrack', () => this.playPrevious());
-      navigator.mediaSession.setActionHandler('nexttrack', () => {
-        Recommender.recordSkip(song.tags);
-        this.playNext();
-      });
-      }
     },
 
     playNext() {
