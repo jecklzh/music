@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (this.skipHistory[combo]) this.skipHistory[combo] *= 0.3;
       });
       this.save();
-    }
+    },
 
     computeWeight(song) {
       const tags = song.tags;
