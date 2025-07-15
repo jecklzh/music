@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const finalWeight = baseWeight * 0.22 + tagBonus * 0.78;
 
       return Math.max(finalWeight, 0.1);
-    }
+    },
 
 
     pick(list) {
