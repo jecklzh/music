@@ -13,11 +13,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     getCombos(tags) {
       const combos = [];
-      for (let i = 0; i < tags.length; i++) {
-        for (let j = i + 1; j < tags.length; j++) {
-          combos.push(`${tags[i]}|${tags[j]}`);
+
+      const generate = (arr, combo = [], start = 0) => {
+        if (combo.length >= 2) {
+          combos.push([...combo].sort().join('|'));
         }
-      }
+        for (let i = start; i < arr.length; i++) {
+          combo.push(arr[i]);
+          generate(arr, combo, i + 1);
+          combo.pop();
+        }
+      };
+
+      generate(tags);
       return combos;
     },
 
@@ -26,22 +34,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const base = this.skipHistory[tag] || 0;
         this.skipHistory[tag] = Math.min(base + 0.5, 10);
       });
+
       this.getCombos(tags).forEach(combo => {
         const base = this.skipHistory[combo] || 0;
         const inc = base * 0.3 + 1;
         this.skipHistory[combo] = Math.min(base + inc, 15);
       });
+
       this.save();
     },
 
     recordCompleted(tags) {
-      this.currentPreferredTags = tags;  // 保存当前歌的标签用于引导
+      this.currentPreferredTags = tags;
+
       tags.forEach(tag => {
-        if (this.skipHistory[tag]) this.skipHistory[tag] *= 0.5;
+        if (this.skipHistory[tag]) {
+          this.skipHistory[tag] *= 0.5;
+        }
       });
+
       this.getCombos(tags).forEach(combo => {
-        if (this.skipHistory[combo]) this.skipHistory[combo] *= 0.3;
+        if (this.skipHistory[combo]) {
+          this.skipHistory[combo] *= 0.3;
+        }
       });
+
       this.save();
     },
 
@@ -65,29 +82,31 @@ document.addEventListener('DOMContentLoaded', () => {
       const avgPenalty = totalCount > 0 ? totalPenalty / totalCount : 0;
       const baseWeight = Math.max(1 - avgPenalty, 0.1);
 
-      //  标签引导逻辑
       let tagBonus = 0;
       if (Array.isArray(this.currentPreferredTags)) {
         const overlap = tags.filter(t => this.currentPreferredTags.includes(t)).length;
-        tagBonus = overlap / tags.length;  // 标签重合比例作为 bonus
+        tagBonus = overlap / tags.length;
       }
 
-      //  最终权重：80% 历史权重 + 20% 当前倾向
       const finalWeight = baseWeight * 0.22 + tagBonus * 0.78;
-
       return Math.max(finalWeight, 0.1);
     },
 
-
     pick(list) {
-      const weights = list.map((song, idx) => ({ idx, weight: this.computeWeight(song) }));
+      const weights = list.map((song, idx) => ({
+        idx,
+        weight: this.computeWeight(song)
+      }));
+
       const total = weights.reduce((sum, w) => sum + w.weight, 0);
       const rand = Math.random() * total;
+
       let acc = 0;
       for (const w of weights) {
         acc += w.weight;
         if (rand < acc) return w.idx;
       }
+
       return 0;
     }
   };
