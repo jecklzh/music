@@ -205,6 +205,20 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       this.renderRelatedSongs(song);
+      
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: song.title
+        });
+
+        navigator.mediaSession.setActionHandler('play', () => this.dom.audio.play());
+        navigator.mediaSession.setActionHandler('pause', () => this.dom.audio.pause());
+        navigator.mediaSession.setActionHandler('previoustrack', () => this.playPrevious());
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+          Recommender.recordSkip(song.tags);
+          this.playNext();
+        });
+      }
     },
 
     playSongByIndex(index) {
