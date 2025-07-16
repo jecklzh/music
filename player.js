@@ -227,9 +227,26 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     playNext() {
-      const nextIndex = Recommender.pick(this.state.musicList);
-      this.state.historyStack.push(this.state.currentIndex);
-      this.updatePlayer(nextIndex);
+      let nextIndex = null;
+      let attempts = 0;
+      const maxAttempts = 20;
+
+      do {
+        const candidate = Recommender.pick(this.state.musicList);
+        if (SleepController.isSongAllowed(this.state.musicList[candidate])) {
+          nextIndex = candidate;
+          break;
+        }
+        attempts++;
+      } while (attempts < maxAttempts);
+
+      if (nextIndex !== null) {
+        this.state.historyStack.push(this.state.currentIndex);
+        this.updatePlayer(nextIndex);
+      } else {
+        console.log('无符合标签的歌曲，暂停播放');
+        this.dom.audio.pause();
+      }
     },
 
     playPrevious() {
