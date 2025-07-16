@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Music</title>
@@ -29,13 +30,15 @@
         <button id="next-btn">下一首</button>
       </div>
       <div class="related">
-        <h3>🎵 相关歌曲</h3>
+        <h3><i class="fa-music" style="margin-right: 0.5rem;"></i>相关歌曲</h3>
         <div id="related-songs"></div>
       </div>
     </div>
 
     <div class="card" id="sleep-control">
-      <span id="sleep-toggle" style="cursor: pointer; font-size: 1.3rem; color: #666;">⏰</span>
+      <span id="sleep-toggle" style="cursor: pointer; font-size: 1.3rem;">
+        <i class="fa-clock-o"></i>
+      </span>
 
       <div id="sleep-panel" style="display: none; margin-top: 1rem;">
         <label style="font-weight: bold;">播放标签：</label>
