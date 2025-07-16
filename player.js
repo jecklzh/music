@@ -297,5 +297,64 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   };
 
+// 睡眠控制模块
+    const SleepController = {
+      enabled: false,
+      endTime: 0,
+      tagFilter: [],
+
+      start(minutes, tag) {
+        this.enabled = true;
+        this.endTime = Date.now() + minutes * 60 * 1000;
+        this.tagFilter = [tag];
+        document.getElementById('sleep-status').textContent = `已启用：播放 ${minutes} 分钟，仅播放「${tag}」相关音乐`;
+        console.log('睡眠启动:', minutes, tag);
+      },
+
+      stop() {
+        this.enabled = false;
+        this.tagFilter = [];
+        document.getElementById('sleep-status').textContent = '未启用';
+        console.log('睡眠已停止');
+      },
+
+      isActive() {
+        return this.enabled && Date.now() < this.endTime;
+      },
+
+      isSongAllowed(song) {
+        if (!this.isActive()) return true;
+        return song.tags.some(tag => this.tagFilter.includes(tag));
+      }
+    };
+
+// 折叠展开
+    document.getElementById('sleep-toggle').addEventListener('click', () => {
+      const panel = document.getElementById('sleep-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+
+// 选择标签按钮
+    document.querySelectorAll('.tag-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+
+// 选择时间后自动开始
+    document.getElementById('sleep-minutes').addEventListener('change', () => {
+      const selectedTagBtn = document.querySelector('.tag-btn.selected');
+      const minutes = parseInt(document.getElementById('sleep-minutes').value);
+      if (selectedTagBtn && minutes) {
+        SleepController.start(minutes, selectedTagBtn.dataset.tag);
+      }
+    });
+
+// 停止按钮
+    document.getElementById('sleep-stop-btn').addEventListener('click', () => {
+      SleepController.stop();
+    });
+  
   MusicPlayer.init();
 });
