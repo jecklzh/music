@@ -241,12 +241,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderRelatedSongs(currentSong) {
       this.dom.relatedContainer.innerHTML = '';
-      const related = this.state.musicList.filter(song =>
-        song.file !== currentSong.file &&
-        song.tags.some(tag => currentSong.tags.includes(tag))
-      ).slice(0, 5);
+      const related = this.state.musicList
+        .filter(song =>
+          song.file !== currentSong.file &&
+          song.tags.some(tag => currentSong.tags.includes(tag))
+        )
+        .map(song => ({
+          song,
+          weight: Recommender.computeWeight(song)
+        }))
+        .sort((a, b) => b.weight - a.weight)
+        .slice(0, 5);
 
-      related.forEach(song => {
+      related.forEach(({ song }) => {
         const songElement = document.createElement('div');
         songElement.className = 'related-song';
         songElement.innerHTML = `${song.title} <span class="song-tags">(${song.tags.join(', ')})</span>`;
