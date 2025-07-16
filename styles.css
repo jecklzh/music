@@ -142,3 +142,18 @@ button:hover {
   gap: 0.5rem;
   margin-top: 0.5rem;
 }
+
+#sleep-control button {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 6px;
+  background: #444;
+  color: white;
+  cursor: pointer;
+}
+#sleep-control button:hover {
+  background: #666;
+}
+#sleep-control .tag-btn.selected {
+  background: #007acc;
+}
