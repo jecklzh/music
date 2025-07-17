@@ -171,9 +171,9 @@ document.addEventListener('DOMContentLoaded', () => {
         this.fadeOut(() => this.playNext());
       });
 
-      this.dom.audio.addEventListener('play', () => this.fadeIn());
+      this.overrideAudioPause(); // 🔧 替换默认 pause 逻辑
 
-      this.dom.audio.addEventListener('pause', () => this.fadeOut(() => this.dom.audio.pause()));
+      this.dom.audio.addEventListener('play', () => this.fadeIn());
 
       this.dom.searchInput.addEventListener('input', () => this.handleSearch());
 
@@ -190,6 +190,14 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("音频播放错误:", this.dom.audio.error);
         this.dom.title.textContent = "音频加载失败, 5秒后尝试下一首...";
         setTimeout(() => this.playNext(), 5000);
+      };
+    },
+
+    overrideAudioPause() {
+      const audio = this.dom.audio;
+      const originalPause = audio.pause.bind(audio);
+      audio.pause = () => {
+        this.fadeOut(() => originalPause());
       };
     },
 
