@@ -1,7 +1,5 @@
-// 你只需要复制这个文件里的所有代码，替换掉你自己的 player.js 即可
-
 document.addEventListener('DOMContentLoaded', () => {
-  // Recommender 对象是你的推荐算法，它的逻辑是独立的，我们保留原样。
+  // Recommender 对象代码保留原样
   const Recommender = {
     skipHistory: {},
     currentPreferredTags: [],
@@ -108,9 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
       musicList: [],
       historyStack: [],
       fadeInterval: null,
-      // --- 新增功能点 1: 追踪用户的播放意图 ---
-      // 当我们开始淡出时，我们设置 isPausing = true。
-      // 这样即使用户在动画期间做了其他操作，我们也能确保最终状态是暂停。
       isPausing: false 
     },
 
@@ -124,14 +119,17 @@ document.addEventListener('DOMContentLoaded', () => {
       searchInput: document.getElementById('tag-search'),
       prevBtn: document.getElementById('prev-btn'),
       nextBtn: document.getElementById('next-btn'),
-      // --- 新增功能点 2: 创建我们自己的播放/暂停按钮 ---
-      // 我们将用这个按钮来替代浏览器自带的播放控件。
-      playPauseBtn: document.createElement('button')
+      playPauseBtn: document.createElement('button'),
+      // --- 新增进度条相关DOM ---
+      progressContainer: document.getElementById('progress-container'),
+      progressBar: document.getElementById('progress-bar'),
+      currentTime: document.getElementById('current-time'),
+      duration: document.getElementById('duration'),
     },
 
     async init() {
       console.log('Player initializing...');
-      this.createCustomControls(); // 创建自定义按钮
+      this.createCustomControls();
       Recommender.init();
       await this.loadMusicList();
       this.bindEvents();
@@ -140,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const lastTime = parseFloat(localStorage.getItem('lastSongTime') || 0);
 
       if (lastIndex !== null && this.state.musicList[lastIndex]) {
-        this.updatePlayer(parseInt(lastIndex), lastTime, true); // 初始加载时，不自动播放
+        this.updatePlayer(parseInt(lastIndex), lastTime, true);
       } else if (this.state.musicList.length > 0) {
         this.updatePlayer(Recommender.pick(this.state.musicList), 0, true);
       } else {
@@ -148,10 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
     
-    // --- 新增功能点 3: 创建并添加自定义播放按钮到DOM ---
     createCustomControls() {
         this.dom.playPauseBtn.id = 'play-pause-btn';
-        this.dom.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>'; // 初始为播放图标
+        this.dom.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
         const controlsDiv = this.dom.nextBtn.parentElement;
         controlsDiv.insertBefore(this.dom.playPauseBtn, this.dom.nextBtn);
     },
@@ -168,8 +165,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
 
+    // --- 新增工具函数：格式化时间 ---
+    formatTime(seconds) {
+        const min = Math.floor(seconds / 60);
+        const sec = Math.floor(seconds % 60).toString().padStart(2, '0');
+        return `${min}:${sec}`;
+    },
+
     bindEvents() {
-      // --- 新增功能点 4: 绑定我们自己按钮的点击事件 ---
       this.dom.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
       
       this.dom.nextBtn.addEventListener('click', () => {
@@ -183,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       this.dom.prevBtn.addEventListener('click', () => this.fadeOut(() => this.playPrevious()));
 
-      // 监听原生事件来更新UI
+      // 更新按钮UI
       this.dom.audio.addEventListener('play', () => {
         this.dom.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         this.state.isPausing = false;
@@ -197,9 +200,13 @@ document.addEventListener('DOMContentLoaded', () => {
         Recommender.recordCompleted(this.state.musicList[this.state.currentIndex].tags);
         this.playNext(true);
       });
+      
+      // --- 新增进度条事件绑定 ---
+      this.dom.audio.addEventListener('timeupdate', () => this.updateProgress());
+      this.dom.audio.addEventListener('loadedmetadata', () => this.updateProgress()); // 加载完元数据后也更新一次
+      this.dom.progressContainer.addEventListener('click', (e) => this.seek(e));
 
       this.dom.searchInput.addEventListener('input', () => this.handleSearch());
-      this.dom.audio.addEventListener('timeupdate', () => this.savePlaybackPosition());
       this.dom.audio.addEventListener('contextmenu', e => e.preventDefault());
       this.dom.audio.onerror = () => {
         console.error("音频播放错误:", this.dom.audio.error);
@@ -208,14 +215,34 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     },
     
-    // --- 新增功能点 5: 播放/暂停的总控制函数 ---
+    // --- 新增进度条更新函数 ---
+    updateProgress() {
+        const { duration, currentTime } = this.dom.audio;
+        if(duration) {
+            const progressPercent = (currentTime / duration) * 100;
+            this.dom.progressBar.style.width = `${progressPercent}%`;
+            this.dom.duration.textContent = this.formatTime(duration);
+            this.dom.currentTime.textContent = this.formatTime(currentTime);
+        }
+    },
+
+    // --- 新增点击进度条跳转函数 ---
+    seek(e) {
+        const width = this.dom.progressContainer.clientWidth;
+        const clickX = e.offsetX;
+        const duration = this.dom.audio.duration;
+        if(duration){
+            this.dom.audio.currentTime = (clickX / width) * duration;
+        }
+    },
+    
     togglePlayPause() {
         if (this.dom.audio.paused) {
             this.state.isPausing = false;
-            this.fadeIn(); // 淡入并播放
+            this.fadeIn();
         } else {
             this.state.isPausing = true;
-            this.fadeOut(); // 淡出并暂停
+            this.fadeOut();
         }
     },
 
@@ -231,6 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       this.dom.audio.onloadedmetadata = () => {
         this.dom.audio.currentTime = startTime;
+        this.updateProgress(); // 确保加载新歌后立刻更新总时长
         if (!initialLoad) {
             this.fadeIn();
         }
@@ -333,15 +361,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
 
-    // --- 新增功能点 6: 修改 fadeOut 和 fadeIn 以适配新的播放/暂停逻辑 ---
     fadeOut(callback) {
       clearInterval(this.state.fadeInterval);
       const step = 0.05;
-      const interval = 25; // 加快动画速度
+      const interval = 25;
       const audio = this.dom.audio;
 
       if (audio.volume === 0) {
-        // 如果是暂停意图，则执行暂停
         if (this.state.isPausing) audio.pause();
         if(callback) callback();
         return;
@@ -353,7 +379,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           audio.volume = 0;
           clearInterval(this.state.fadeInterval);
-          // 动画结束后，检查是不是暂停意图
           if (this.state.isPausing) {
             audio.pause();
           }
@@ -365,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fadeIn() {
       clearInterval(this.state.fadeInterval);
       const step = 0.05;
-      const interval = 25; // 加快动画速度
+      const interval = 25;
       const audio = this.dom.audio;
       
       if(audio.paused) {
