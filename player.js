@@ -120,7 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
       prevBtn: document.getElementById('prev-btn'),
       nextBtn: document.getElementById('next-btn'),
       playPauseBtn: document.createElement('button'),
-      // --- 新增进度条相关DOM ---
       progressContainer: document.getElementById('progress-container'),
       progressBar: document.getElementById('progress-bar'),
       currentTime: document.getElementById('current-time'),
@@ -165,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
 
-    // --- 新增工具函数：格式化时间 ---
     formatTime(seconds) {
         const min = Math.floor(seconds / 60);
         const sec = Math.floor(seconds % 60).toString().padStart(2, '0');
@@ -186,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
       
       this.dom.prevBtn.addEventListener('click', () => this.fadeOut(() => this.playPrevious()));
 
-      // 更新按钮UI
       this.dom.audio.addEventListener('play', () => {
         this.dom.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         this.state.isPausing = false;
@@ -201,9 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
         this.playNext(true);
       });
       
-      // --- 新增进度条事件绑定 ---
       this.dom.audio.addEventListener('timeupdate', () => this.updateProgress());
-      this.dom.audio.addEventListener('loadedmetadata', () => this.updateProgress()); // 加载完元数据后也更新一次
+      this.dom.audio.addEventListener('loadedmetadata', () => this.updateProgress());
       this.dom.progressContainer.addEventListener('click', (e) => this.seek(e));
 
       this.dom.searchInput.addEventListener('input', () => this.handleSearch());
@@ -215,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     },
     
-    // --- 新增进度条更新函数 ---
     updateProgress() {
         const { duration, currentTime } = this.dom.audio;
         if(duration) {
@@ -226,7 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     },
 
-    // --- 新增点击进度条跳转函数 ---
     seek(e) {
         const width = this.dom.progressContainer.clientWidth;
         const clickX = e.offsetX;
@@ -258,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       this.dom.audio.onloadedmetadata = () => {
         this.dom.audio.currentTime = startTime;
-        this.updateProgress(); // 确保加载新歌后立刻更新总时长
+        this.updateProgress();
         if (!initialLoad) {
             this.fadeIn();
         }
@@ -287,13 +281,43 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     playNext(isAutoPlay = false) {
-      const nextIndex = Recommender.pick(this.state.musicList);
-      this.state.historyStack.push(this.state.currentIndex);
+      // --- 核心修复点 1: 检查倒计时是否结束 ---
+      // 恢复这部分逻辑，确保时间到了之后能停止播放。
+      if (SleepController.isActive() && Date.now() >= SleepController.endTime) {
+        console.log('睡眠倒计时结束，停止播放');
+        this.dom.audio.pause();
+        return; // 直接退出，不再播放下一首
+      }
 
-      if (isAutoPlay) {
-        this.updatePlayer(nextIndex);
+      let nextIndex = null;
+      let attempts = 0;
+      const maxAttempts = 20; // 最多尝试20次，避免死循环
+
+      // 这个循环会根据推荐算法挑选歌曲，并检查是否符合睡眠模式设定的标签
+      do {
+        const candidate = Recommender.pick(this.state.musicList);
+        
+        // --- 核心修复点 2: 检查歌曲是否符合设定的标签 ---
+        // 恢复这部分逻辑，确保在睡眠模式下只播放指定标签的歌曲。
+        if (SleepController.isSongAllowed(this.state.musicList[candidate])) {
+          nextIndex = candidate; // 找到了符合条件的歌曲
+          break; // 退出循环
+        }
+        attempts++;
+      } while (attempts < maxAttempts);
+
+      if (nextIndex !== null) {
+        // 如果成功找到了下一首歌
+        this.state.historyStack.push(this.state.currentIndex);
+        if (isAutoPlay) {
+          this.updatePlayer(nextIndex);
+        } else {
+          this.fadeOut(() => this.updatePlayer(nextIndex));
+        }
       } else {
-        this.fadeOut(() => this.updatePlayer(nextIndex));
+        // 如果尝试了20次都没找到符合条件的歌曲（比如列表里没有该标签的歌）
+        console.log('在睡眠模式下，未找到符合条件的歌曲，暂停播放');
+        this.dom.audio.pause();
       }
     },
 
@@ -425,27 +449,32 @@ document.addEventListener('DOMContentLoaded', () => {
       this.tagFilter = [tag];
       document.getElementById('sleep-status').textContent = `已启用：播放 ${minutes} 分钟，仅播放「${tag}」相关音乐`;
       this.updateRemainingTime();
+      if(this.intervalId) clearInterval(this.intervalId); // 防止重复启动
       this.intervalId = setInterval(() => this.updateRemainingTime(), 1000);
+
+      // --- 新增：启动倒计时后，立即播放一首符合标签的歌曲 ---
+      MusicPlayer.playNext(true); 
     },
 
     stop() {
       this.enabled = false;
       this.tagFilter = [];
       clearInterval(this.intervalId);
+      this.intervalId = null;
       document.getElementById('sleep-status').textContent = '未启用';
     },
 
     isActive() {
-      return this.enabled && Date.now() < this.endTime;
+      return this.enabled; // 只检查是否启用，时间判断交给playNext
     },
 
     isSongAllowed(song) {
-      if (!this.isActive()) return true;
+      if (!this.isActive() || this.tagFilter.length === 0) return true; // 如果没激活或没选标签，则允许所有歌曲
       return song.tags.some(tag => this.tagFilter.includes(tag));
     },
 
     updateRemainingTime() {
-      if (!this.isActive()) {
+      if (!this.isActive() || Date.now() >= this.endTime) {
         this.stop();
         return;
       }
