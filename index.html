@@ -24,11 +24,21 @@
     <div id="player" class="card">
       <h2 id="song-title">加载中...</h2>
       <p class="song-tags" id="song-tags"></p>
-      <audio id="audio" controls controlsList="nodownload"></audio>
+      
+      <audio id="audio" controlsList="nodownload"></audio>
+
+      <div class="progress-container" id="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div class="time-display">
+        <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+      </div>
+
       <div class="controls">
         <button id="prev-btn">上一首</button>
         <button id="next-btn">下一首</button>
       </div>
+      
       <div class="related">
         <h3><i class="fas fa-music" style="margin-right: 0.5rem;"></i>相关歌曲</h3>
         <div id="related-songs"></div>
