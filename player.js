@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
   const Recommender = {
     skipHistory: {},
@@ -13,10 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     getCombos(tags) {
       const combos = [];
+      const seen = new Set();
 
       const generate = (arr, combo = [], start = 0) => {
         if (combo.length >= 2) {
-          combos.push([...combo].sort().join('|'));
+          const key = [...combo].sort().join('|');
+          if (!seen.has(key)) {
+            seen.add(key);
+            combos.push(key);
+          }
         }
         for (let i = start; i < arr.length; i++) {
           combo.push(arr[i]);
@@ -120,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dom: {
       audio: document.getElementById('audio'),
+      originalVolume: 1,
       title: document.getElementById('song-title'),
       tags: document.getElementById('song-tags'),
       relatedContainer: document.getElementById('related-songs'),
@@ -134,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
       Recommender.init();
       await this.loadMusicList();
       this.bindEvents();
+      this.overrideAudioPause(); // 👈 替换 pause 行为
 
       const lastIndex = localStorage.getItem('lastSongIndex');
       const lastTime = parseFloat(localStorage.getItem('lastSongTime') || 0);
@@ -171,6 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
         this.playNext();
       });
 
+      this.dom.audio.addEventListener('play', () => this.fadeIn());
+
       this.dom.searchInput.addEventListener('input', () => this.handleSearch());
 
       this.dom.audio.addEventListener('ended', () => {
@@ -189,6 +197,17 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     },
 
+    overrideAudioPause() {
+      const audio = this.dom.audio;
+      if (audio._originalPause) return;
+      audio._originalPause = audio.pause.bind(audio);
+      audio.pause = () => {
+        this.fadeOut(() => {
+          audio._originalPause();
+        });
+      };
+    },
+
     updatePlayer(index, startTime = 0) {
       if (!this.state.musicList[index]) return;
       this.state.currentIndex = index;
@@ -201,11 +220,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       this.dom.audio.onloadedmetadata = () => {
         this.dom.audio.currentTime = startTime;
-        this.dom.audio.play().catch(e => console.warn('自动播放失败:', e));
+        this.fadeIn();
       };
 
       this.renderRelatedSongs(song);
-      
+
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: song.title
@@ -242,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (nextIndex !== null) {
         this.state.historyStack.push(this.state.currentIndex);
-        this.updatePlayer(nextIndex);
+        this.fadeOut(() => this.updatePlayer(nextIndex));
       } else {
         console.log('无符合标签的歌曲，暂停播放');
         this.dom.audio.pause();
@@ -252,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     playPrevious() {
       if (this.state.historyStack.length > 0) {
         const prevIndex = this.state.historyStack.pop();
-        this.updatePlayer(prevIndex);
+        this.fadeOut(() => this.updatePlayer(prevIndex));
       }
     },
 
@@ -312,66 +331,95 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('lastSongTime', this.dom.audio.currentTime);
       }
     },
+
+    fadeOut(callback) {
+      const step = 0.05;
+      const interval = 50;
+      const audio = this.dom.audio;
+
+      const fade = setInterval(() => {
+        if (audio.volume > step) {
+          audio.volume -= step;
+        } else {
+          audio.volume = 0;
+          clearInterval(fade);
+          callback();
+        }
+      }, interval);
+    },
+
+    fadeIn() {
+      const step = 0.05;
+      const interval = 50;
+      const audio = this.dom.audio;
+
+      audio.volume = 0;
+      audio.play().catch(e => console.warn('播放失败:', e));
+
+      const fade = setInterval(() => {
+        if (audio.volume < this.dom.originalVolume - step) {
+          audio.volume += step;
+        } else {
+          audio.volume = this.dom.originalVolume;
+          clearInterval(fade);
+        }
+      }, interval);
+    },
   };
 
-// 睡眠控制模块
-    const SleepController = {
-      enabled: false,
-      endTime: 0,
-      tagFilter: [],
+  const SleepController = {
+    enabled: false,
+    endTime: 0,
+    tagFilter: [],
 
-      start(minutes, tag) {
-        this.enabled = true;
-        this.endTime = Date.now() + minutes * 60 * 1000;
-        this.tagFilter = [tag];
-        document.getElementById('sleep-status').textContent = `已启用：播放 ${minutes} 分钟，仅播放「${tag}」相关音乐`;
-        console.log('睡眠启动:', minutes, tag);
-      },
+    start(minutes, tag) {
+      this.enabled = true;
+      this.endTime = Date.now() + minutes * 60 * 1000;
+      this.tagFilter = [tag];
+      document.getElementById('sleep-status').textContent = `已启用：播放 ${minutes} 分钟，仅播放「${tag}」相关音乐`;
+      console.log('睡眠启动:', minutes, tag);
+    },
 
-      stop() {
-        this.enabled = false;
-        this.tagFilter = [];
-        document.getElementById('sleep-status').textContent = '未启用';
-        console.log('睡眠已停止');
-      },
+    stop() {
+      this.enabled = false;
+      this.tagFilter = [];
+      document.getElementById('sleep-status').textContent = '未启用';
+      console.log('睡眠已停止');
+    },
 
-      isActive() {
-        return this.enabled && Date.now() < this.endTime;
-      },
+    isActive() {
+      return this.enabled && Date.now() < this.endTime;
+    },
 
-      isSongAllowed(song) {
-        if (!this.isActive()) return true;
-        return song.tags.some(tag => this.tagFilter.includes(tag));
-      }
-    };
+    isSongAllowed(song) {
+      if (!this.isActive()) return true;
+      return song.tags.some(tag => this.tagFilter.includes(tag));
+    }
+  };
 
-// 折叠展开
-    document.getElementById('sleep-toggle').addEventListener('click', () => {
-      const panel = document.getElementById('sleep-panel');
-      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('sleep-toggle').addEventListener('click', () => {
+    const panel = document.getElementById('sleep-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  });
+
+  document.querySelectorAll('.tag-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
     });
+  });
 
-// 选择标签按钮
-    document.querySelectorAll('.tag-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-      });
-    });
+  document.getElementById('sleep-minutes').addEventListener('change', () => {
+    const selectedTagBtn = document.querySelector('.tag-btn.selected');
+    const minutes = parseInt(document.getElementById('sleep-minutes').value);
+    if (selectedTagBtn && minutes) {
+      SleepController.start(minutes, selectedTagBtn.dataset.tag);
+    }
+  });
 
-// 选择时间后自动开始
-    document.getElementById('sleep-minutes').addEventListener('change', () => {
-      const selectedTagBtn = document.querySelector('.tag-btn.selected');
-      const minutes = parseInt(document.getElementById('sleep-minutes').value);
-      if (selectedTagBtn && minutes) {
-        SleepController.start(minutes, selectedTagBtn.dataset.tag);
-      }
-    });
+  document.getElementById('sleep-stop-btn').addEventListener('click', () => {
+    SleepController.stop();
+  });
 
-// 停止按钮
-    document.getElementById('sleep-stop-btn').addEventListener('click', () => {
-      SleepController.stop();
-    });
-  
   MusicPlayer.init();
 });
