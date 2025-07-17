@@ -135,6 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
       await this.loadMusicList();
       this.bindEvents();
 
+      this.overrideAudioPause();
+
       const lastIndex = localStorage.getItem('lastSongIndex');
       const lastTime = parseFloat(localStorage.getItem('lastSongTime') || 0);
 
@@ -145,6 +147,15 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         this.dom.title.textContent = "音乐列表为空";
       }
+    },
+
+    overrideAudioPause() {
+      const originalPause = this.dom.audio.pause.bind(this.dom.audio);
+      this.dom.audio.pause = () => {
+        this.fadeOut(() => {
+          originalPause();
+        });
+      };
     },
 
     async loadMusicList() {
@@ -171,8 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
         this.fadeOut(() => this.playNext());
       });
 
-      this.overrideAudioPause(); // 🔧 替换默认 pause 逻辑
-
       this.dom.audio.addEventListener('play', () => this.fadeIn());
 
       this.dom.searchInput.addEventListener('input', () => this.handleSearch());
@@ -190,14 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("音频播放错误:", this.dom.audio.error);
         this.dom.title.textContent = "音频加载失败, 5秒后尝试下一首...";
         setTimeout(() => this.playNext(), 5000);
-      };
-    },
-
-    overrideAudioPause() {
-      const audio = this.dom.audio;
-      const originalPause = audio.pause.bind(audio);
-      audio.pause = () => {
-        this.fadeOut(() => originalPause());
       };
     },
 
