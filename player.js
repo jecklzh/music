@@ -135,8 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
       await this.loadMusicList();
       this.bindEvents();
 
-      this.overrideAudioPause();
-
       const lastIndex = localStorage.getItem('lastSongIndex');
       const lastTime = parseFloat(localStorage.getItem('lastSongTime') || 0);
 
@@ -149,13 +147,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
 
-    overrideAudioPause() {
-      const originalPause = this.dom.audio.pause.bind(this.dom.audio);
-      this.dom.audio.pause = () => {
-        this.fadeOut(() => {
-          originalPause();
-        });
-      };
+    shouldStopBySleep() {
+      if (SleepController.enabled && Date.now() >= SleepController.endTime) {
+        console.log('睡眠倒计时结束，停止播放');
+        this.dom.audio.pause();
+        return true;
+      }
+      return false;
     },
 
     async loadMusicList() {
@@ -171,9 +169,13 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     bindEvents() {
-      this.dom.prevBtn.addEventListener('click', () => this.playPrevious());
+      this.dom.prevBtn.addEventListener('click', () => {
+        if (this.shouldStopBySleep()) return;
+        this.playPrevious();
+      });
 
       this.dom.nextBtn.addEventListener('click', () => {
+        if (this.shouldStopBySleep()) return;
         const song = this.state.musicList[this.state.currentIndex];
         const audio = this.dom.audio;
         if (!isNaN(audio.duration) && audio.currentTime < audio.duration * 0.5) {
@@ -183,6 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       this.dom.audio.addEventListener('play', () => this.fadeIn());
+
+      this.dom.audio.addEventListener('pause', () => this.fadeOut(() => this.dom.audio.pause()));
 
       this.dom.searchInput.addEventListener('input', () => this.handleSearch());
 
