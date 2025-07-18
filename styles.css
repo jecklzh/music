@@ -197,3 +197,29 @@ button:hover {
 #sleep-control .tag-btn.selected {
   background: #007acc;
 }
+
+/* 新增：额外控制区域样式 */
+#extra-controls {
+  padding: 0.5rem 1rem; /* 减小一点内边距 */
+}
+
+.control-icons {
+  display: flex;
+  gap: 1.5rem; /* 图标之间的间距 */
+  font-size: 1.3rem;
+}
+
+.control-icon {
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s;
+}
+
+.control-icon:hover {
+  color: #333;
+}
+
+/* 当音效或睡眠模式激活时的样式 */
+.control-icon.active {
+  color: #007acc;
+}
