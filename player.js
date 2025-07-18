@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Recommender 对象和 SleepController 对象代码保留原样，核心改动在新的 AudioFxController
+  // Recommender 和 SleepController 对象代码保留原样
   const Recommender = {
     skipHistory: {}, currentPreferredTags: [],
     init() { this.skipHistory = JSON.parse(localStorage.getItem('skipHistory') || '{}'); },
@@ -47,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
       playPauseBtn: document.createElement('button'), progressContainer: document.getElementById('progress-container'),
       progressBar: document.getElementById('progress-bar'), currentTime: document.getElementById('current-time'),
       duration: document.getElementById('duration'),
-      // --- 新增: 获取音效开关按钮 ---
       fxToggle: document.getElementById('fx-toggle'),
     },
     async init() {
@@ -72,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formatTime(seconds) { const min = Math.floor(seconds / 60); const sec = Math.floor(seconds % 60).toString().padStart(2, '0'); return `${min}:${sec}`; },
     bindEvents() {
       this.dom.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
-      this.dom.fxToggle.addEventListener('click', () => AudioFxController.toggle()); // 绑定音效开关事件
+      this.dom.fxToggle.addEventListener('click', () => AudioFxController.toggle());
       this.dom.nextBtn.addEventListener('click', () => {
         const song = this.state.musicList[this.state.currentIndex]; const audio = this.dom.audio;
         if (!isNaN(audio.duration) && audio.currentTime < audio.duration * 0.5) { Recommender.recordSkip(song.tags); }
@@ -95,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     seek(e) { const { clientWidth } = this.dom.progressContainer, { offsetX } = e, { duration } = this.dom.audio; if(duration){ this.dom.audio.currentTime = (offsetX / clientWidth) * duration; } },
     togglePlayPause() {
-        AudioFxController.ensureInitialized(); // 确保在第一次播放时，音频图已连接
+        AudioFxController.ensureInitialized();
         if (this.dom.audio.paused) { this.state.isPausing = false; this.fadeIn(); }
         else { this.state.isPausing = true; this.fadeOut(); } 
     },
@@ -172,79 +171,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   
-  // --- 新增: 音效控制器 ---
   const AudioFxController = {
-    audioElement: null,
-    toggleButton: null,
-    audioContext: null,
-    sourceNode: null,
-    compressorNode: null, // 压缩器节点
-    gainNode: null,       // 用于绕过效果器的直通节点
-    isEnabled: false,
-    isInitialized: false,
+    audioElement: null, toggleButton: null, audioContext: null, sourceNode: null,
+    compressorNode: null, gainNode: null, isEnabled: false, isInitialized: false,
 
     init(audioElement, toggleButton) {
-      this.audioElement = audioElement;
-      this.toggleButton = toggleButton;
-      // 从 localStorage 加载用户上次的设置
+      this.audioElement = audioElement; this.toggleButton = toggleButton;
       const savedState = localStorage.getItem('audioFxEnabled') === 'true';
       this.isEnabled = savedState;
-      if (this.isEnabled) {
-        this.toggleButton.classList.add('active');
-      }
+      if (this.isEnabled) { this.toggleButton.classList.add('active'); }
     },
     
-    // 确保音频上下文已初始化（必须在用户交互后调用）
     ensureInitialized() {
       if (this.isInitialized) return;
       try {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        // 1. 创建源
         this.sourceNode = this.audioContext.createMediaElementSource(this.audioElement);
-        // 2. 创建直通节点（用于关闭效果时）
         this.gainNode = this.audioContext.createGain();
-        // 3. 创建压缩器节点
         this.compressorNode = this.audioContext.createDynamicsCompressor();
-        // 设置一些非常适合音乐的通用参数
-        this.compressorNode.threshold.setValueAtTime(-24, this.audioContext.currentTime); // 当声音超过-24dB时开始压缩
-        this.compressorNode.knee.setValueAtTime(30, this.audioContext.currentTime);     // 拐点平滑度
-        this.compressorNode.ratio.setValueAtTime(12, this.audioContext.currentTime);      // 压缩比
-        this.compressorNode.attack.setValueAtTime(0.003, this.audioContext.currentTime);  // 启动时间
-        this.compressorNode.release.setValueAtTime(0.25, this.audioContext.currentTime); // 释放时间
+        this.compressorNode.threshold.setValueAtTime(-24, this.audioContext.currentTime);
+        this.compressorNode.knee.setValueAtTime(30, this.audioContext.currentTime);
+        this.compressorNode.ratio.setValueAtTime(12, this.audioContext.currentTime);
+        this.compressorNode.attack.setValueAtTime(0.003, this.audioContext.currentTime);
+        this.compressorNode.release.setValueAtTime(0.25, this.audioContext.currentTime);
 
-        // 4. 将源头同时连接到两个路径上
+        // --- 核心修复点 A: 永久连接分支 ---
+        // 将音源永久地连接到两个分支（效果器和直通）
         this.sourceNode.connect(this.compressorNode);
         this.sourceNode.connect(this.gainNode);
-
+        
         this.isInitialized = true;
         console.log("Web Audio API Initialized.");
-        this.applyState(); // 应用初始状态
-      } catch(e) {
-        console.error("Failed to initialize Web Audio API:", e);
-      }
+        this.applyState();
+      } catch(e) { console.error("Failed to initialize Web Audio API:", e); }
     },
 
     toggle() {
-      this.ensureInitialized(); // 如果还没初始化，现在就初始化
-      this.isEnabled = !this.isEnabled;
+      this.ensureInitialized(); this.isEnabled = !this.isEnabled;
       localStorage.setItem('audioFxEnabled', this.isEnabled);
       this.applyState();
     },
 
+    // --- 核心修复点 B: 更安全的切换逻辑 ---
     applyState() {
       if (!this.isInitialized) return;
-
       if (this.isEnabled) {
-        console.log("Audio FX Enabled: Compressor ON");
-        // 连接压缩器路径，断开直通路径
+        console.log("Audio FX Enabled: Routing through Compressor");
+        // 把直通的音量设为0，把效果器的音量设为1
+        this.gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
         this.compressorNode.connect(this.audioContext.destination);
-        this.gainNode.disconnect(this.audioContext.destination);
         this.toggleButton.classList.add('active');
       } else {
-        console.log("Audio FX Disabled: Compressor OFF");
-        // 连接直通路径，断开压缩器路径
+        console.log("Audio FX Disabled: Bypassing Compressor");
+        // 把直通的音量设为1，断开效果器（以节省资源）
+        try { this.compressorNode.disconnect(this.audioContext.destination); } catch(e) {}
+        this.gainNode.gain.setValueAtTime(1, this.audioContext.currentTime);
         this.gainNode.connect(this.audioContext.destination);
-        this.compressorNode.disconnect(this.audioContext.destination);
         this.toggleButton.classList.remove('active');
       }
     }
