@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Recommender 对象代码保留原样
+  // Recommender 对象和 SleepController 对象代码保留原样，核心改动在新的 AudioFxController
   const Recommender = {
     skipHistory: {}, currentPreferredTags: [],
     init() { this.skipHistory = JSON.parse(localStorage.getItem('skipHistory') || '{}'); },
@@ -47,10 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
       playPauseBtn: document.createElement('button'), progressContainer: document.getElementById('progress-container'),
       progressBar: document.getElementById('progress-bar'), currentTime: document.getElementById('current-time'),
       duration: document.getElementById('duration'),
+      // --- 新增: 获取音效开关按钮 ---
+      fxToggle: document.getElementById('fx-toggle'),
     },
     async init() {
       console.log('Player initializing...');
-      this.createCustomControls(); Recommender.init(); await this.loadMusicList(); this.bindEvents();
+      this.createCustomControls(); Recommender.init(); AudioFxController.init(this.dom.audio, this.dom.fxToggle);
+      await this.loadMusicList(); this.bindEvents();
       const lastIndex = localStorage.getItem('lastSongIndex'), lastTime = parseFloat(localStorage.getItem('lastSongTime') || 0);
       if (lastIndex !== null && this.state.musicList[lastIndex]) { this.updatePlayer(parseInt(lastIndex), lastTime, true); }
       else if (this.state.musicList.length > 0) { this.updatePlayer(Recommender.pick(this.state.musicList), 0, true); }
@@ -69,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formatTime(seconds) { const min = Math.floor(seconds / 60); const sec = Math.floor(seconds % 60).toString().padStart(2, '0'); return `${min}:${sec}`; },
     bindEvents() {
       this.dom.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
+      this.dom.fxToggle.addEventListener('click', () => AudioFxController.toggle()); // 绑定音效开关事件
       this.dom.nextBtn.addEventListener('click', () => {
         const song = this.state.musicList[this.state.currentIndex]; const audio = this.dom.audio;
         if (!isNaN(audio.duration) && audio.currentTime < audio.duration * 0.5) { Recommender.recordSkip(song.tags); }
@@ -90,7 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if(duration) { this.dom.progressBar.style.width = `${(currentTime / duration) * 100}%`; this.dom.duration.textContent = this.formatTime(duration); this.dom.currentTime.textContent = this.formatTime(currentTime); }
     },
     seek(e) { const { clientWidth } = this.dom.progressContainer, { offsetX } = e, { duration } = this.dom.audio; if(duration){ this.dom.audio.currentTime = (offsetX / clientWidth) * duration; } },
-    togglePlayPause() { if (this.dom.audio.paused) { this.state.isPausing = false; this.fadeIn(); } else { this.state.isPausing = true; this.fadeOut(); } },
+    togglePlayPause() {
+        AudioFxController.ensureInitialized(); // 确保在第一次播放时，音频图已连接
+        if (this.dom.audio.paused) { this.state.isPausing = false; this.fadeIn(); }
+        else { this.state.isPausing = true; this.fadeOut(); } 
+    },
     updatePlayer(index, startTime = 0, initialLoad = false) {
       if (!this.state.musicList[index]) return; this.state.currentIndex = index; const song = this.state.musicList[index];
       this.dom.title.textContent = song.title; this.dom.tags.textContent = song.tags.join(', ');
@@ -106,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
     playSongByIndex(index) { this.state.historyStack.push(this.state.currentIndex); this.fadeOut(() => this.updatePlayer(index)); },
-    
     playNext(isAutoPlay = false) {
       let nextIndex = null, attempts = 0, maxAttempts = 20;
       do {
@@ -114,23 +121,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (SleepController.isSongAllowed(this.state.musicList[candidate])) { nextIndex = candidate; break; }
         attempts++;
       } while (attempts < maxAttempts);
-
       if (nextIndex !== null) {
         this.state.historyStack.push(this.state.currentIndex);
         if (isAutoPlay) { this.updatePlayer(nextIndex); } 
         else { this.fadeOut(() => this.updatePlayer(nextIndex)); }
       } else {
-        console.log('在睡眠模式下，未找到符合条件的歌曲，暂停播放。');
-        this.fadeOut(() => this.dom.audio.pause());
+        console.log('在睡眠模式下，未找到符合条件的歌曲，暂停播放。'); this.fadeOut(() => this.dom.audio.pause());
       }
     },
-    
-    stopPlaybackDueToTimer() {
-        console.log("Timer expired. Fading out and pausing audio.");
-        this.state.isPausing = true;
-        this.fadeOut(() => this.dom.audio.pause());
-    },
-
+    stopPlaybackDueToTimer() { console.log("Timer expired. Fading out and pausing audio."); this.state.isPausing = true; this.fadeOut(() => this.dom.audio.pause()); },
     playPrevious() { if (this.state.historyStack.length > 0) { const prevIndex = this.state.historyStack.pop(); this.updatePlayer(prevIndex); } },
     renderRelatedSongs(currentSong) {
       this.dom.relatedContainer.innerHTML = '';
@@ -147,7 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const query = this.dom.searchInput.value.trim().toLowerCase(); this.dom.searchResults.innerHTML = ''; if (!query) return;
       const results = this.state.musicList.filter(song => song.title.toLowerCase().includes(query) || song.tags.some(tag => tag.toLowerCase().includes(query))).slice(0, 5);
       results.forEach(song => {
-        const resultItem = document.createElement('div'); resultItem.className = 'search-result-item'; resultItem.innerHTML = `${song.title} <span class="song-tags">${song.tags.join(', ')}</span>`;
+        const resultItem = document.createElement('div'); resultItem.className = 'search-result-item';
+        resultItem.innerHTML = `${song.title} <span class="song-tags">${song.tags.join(', ')}</span>`;
         resultItem.addEventListener('click', () => { const songIndex = this.state.musicList.findIndex(item => item.file === song.file); if (songIndex !== -1) this.playSongByIndex(songIndex); this.dom.searchInput.value = ''; this.dom.searchResults.innerHTML = ''; });
         this.dom.searchResults.appendChild(resultItem);
       });
@@ -171,47 +171,102 @@ document.addEventListener('DOMContentLoaded', () => {
       }, interval);
     }
   };
+  
+  // --- 新增: 音效控制器 ---
+  const AudioFxController = {
+    audioElement: null,
+    toggleButton: null,
+    audioContext: null,
+    sourceNode: null,
+    compressorNode: null, // 压缩器节点
+    gainNode: null,       // 用于绕过效果器的直通节点
+    isEnabled: false,
+    isInitialized: false,
+
+    init(audioElement, toggleButton) {
+      this.audioElement = audioElement;
+      this.toggleButton = toggleButton;
+      // 从 localStorage 加载用户上次的设置
+      const savedState = localStorage.getItem('audioFxEnabled') === 'true';
+      this.isEnabled = savedState;
+      if (this.isEnabled) {
+        this.toggleButton.classList.add('active');
+      }
+    },
+    
+    // 确保音频上下文已初始化（必须在用户交互后调用）
+    ensureInitialized() {
+      if (this.isInitialized) return;
+      try {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // 1. 创建源
+        this.sourceNode = this.audioContext.createMediaElementSource(this.audioElement);
+        // 2. 创建直通节点（用于关闭效果时）
+        this.gainNode = this.audioContext.createGain();
+        // 3. 创建压缩器节点
+        this.compressorNode = this.audioContext.createDynamicsCompressor();
+        // 设置一些非常适合音乐的通用参数
+        this.compressorNode.threshold.setValueAtTime(-24, this.audioContext.currentTime); // 当声音超过-24dB时开始压缩
+        this.compressorNode.knee.setValueAtTime(30, this.audioContext.currentTime);     // 拐点平滑度
+        this.compressorNode.ratio.setValueAtTime(12, this.audioContext.currentTime);      // 压缩比
+        this.compressorNode.attack.setValueAtTime(0.003, this.audioContext.currentTime);  // 启动时间
+        this.compressorNode.release.setValueAtTime(0.25, this.audioContext.currentTime); // 释放时间
+
+        // 4. 将源头同时连接到两个路径上
+        this.sourceNode.connect(this.compressorNode);
+        this.sourceNode.connect(this.gainNode);
+
+        this.isInitialized = true;
+        console.log("Web Audio API Initialized.");
+        this.applyState(); // 应用初始状态
+      } catch(e) {
+        console.error("Failed to initialize Web Audio API:", e);
+      }
+    },
+
+    toggle() {
+      this.ensureInitialized(); // 如果还没初始化，现在就初始化
+      this.isEnabled = !this.isEnabled;
+      localStorage.setItem('audioFxEnabled', this.isEnabled);
+      this.applyState();
+    },
+
+    applyState() {
+      if (!this.isInitialized) return;
+
+      if (this.isEnabled) {
+        console.log("Audio FX Enabled: Compressor ON");
+        // 连接压缩器路径，断开直通路径
+        this.compressorNode.connect(this.audioContext.destination);
+        this.gainNode.disconnect(this.audioContext.destination);
+        this.toggleButton.classList.add('active');
+      } else {
+        console.log("Audio FX Disabled: Compressor OFF");
+        // 连接直通路径，断开压缩器路径
+        this.gainNode.connect(this.audioContext.destination);
+        this.compressorNode.disconnect(this.audioContext.destination);
+        this.toggleButton.classList.remove('active');
+      }
+    }
+  };
 
   const SleepController = {
     endTime: null, tagFilter: [], intervalId: null,
     isActive() { return this.endTime !== null; },
-    
-    // --- 核心修复点 ---
-    // 这就是我们这次修改的全部内容
     start(minutes, tag) {
-      this.stop(); // 无论如何，先停止旧的计时器，保证只有一个在运行
-      this.endTime = Date.now() + minutes * 60 * 1000;
-      this.tagFilter = [tag];
-
-      // 只设置后台计时器，不打扰当前播放
+      this.stop(); this.endTime = Date.now() + minutes * 60 * 1000; this.tagFilter = [tag];
       this.intervalId = setInterval(() => this.updateRemainingTime(), 1000);
-      
-      // 更新UI，告诉用户倒计时已开始
       document.getElementById('sleep-status').textContent = `已启用：播放 ${minutes} 分钟，「${tag}」`;
       this.updateRemainingTime(); 
-
-      // 移除了下面这行代码，这样就不会立即切歌了
-      // MusicPlayer.fadeOut(() => MusicPlayer.playNext()); 
     },
-
     stop() {
       clearInterval(this.intervalId); this.intervalId = null; this.endTime = null; this.tagFilter = [];
       document.getElementById('sleep-status').textContent = '未启用';
     },
     isSongAllowed(song) { if (!this.isActive() || this.tagFilter.length === 0) return true; return song.tags.some(tag => this.tagFilter.includes(tag)); },
-
     updateRemainingTime() {
-      if (!this.isActive()) return;
-      
-      const msLeft = this.endTime - Date.now();
-
-      if (msLeft <= 0) {
-        console.log("Timer has expired. Issuing stop command.");
-        MusicPlayer.stopPlaybackDueToTimer();
-        this.stop();
-        return;
-      }
-
+      if (!this.isActive()) return; const msLeft = this.endTime - Date.now();
+      if (msLeft <= 0) { console.log("Timer has expired. Issuing stop command."); MusicPlayer.stopPlaybackDueToTimer(); this.stop(); return; }
       const min = Math.floor(msLeft / 60000); const sec = Math.floor((msLeft % 60000) / 1000).toString().padStart(2, '0');
       document.getElementById('sleep-status').textContent = `剩余: ${min}:${sec}，仅播放「${this.tagFilter[0]}」`;
     }
