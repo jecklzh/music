@@ -108,9 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
     playSongByIndex(index) { this.state.historyStack.push(this.state.currentIndex); this.fadeOut(() => this.updatePlayer(index)); },
     
     playNext(isAutoPlay = false) {
-      // --- 修复点 A: 简化 playNext ---
-      // 移除此处的时间检查，因为这个职责已经完全交给后台的计时器 `SleepController.updateRemainingTime`。
-      // 现在的 playNext 只负责根据标签挑选下一首歌。
       let nextIndex = null, attempts = 0, maxAttempts = 20;
       do {
         const candidate = Recommender.pick(this.state.musicList);
@@ -128,11 +125,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
     
-    // --- 修复点 B: 新增一个专门用于被计时器调用的停止函数 ---
-    // 这个函数提供了清晰的停止指令。
     stopPlaybackDueToTimer() {
         console.log("Timer expired. Fading out and pausing audio.");
-        this.state.isPausing = true; // 明确意图是暂停
+        this.state.isPausing = true;
         this.fadeOut(() => this.dom.audio.pause());
     },
 
@@ -180,29 +175,40 @@ document.addEventListener('DOMContentLoaded', () => {
   const SleepController = {
     endTime: null, tagFilter: [], intervalId: null,
     isActive() { return this.endTime !== null; },
+    
+    // --- 核心修复点 ---
+    // 这就是我们这次修改的全部内容
     start(minutes, tag) {
-      this.stop(); this.endTime = Date.now() + minutes * 60 * 1000; this.tagFilter = [tag];
+      this.stop(); // 无论如何，先停止旧的计时器，保证只有一个在运行
+      this.endTime = Date.now() + minutes * 60 * 1000;
+      this.tagFilter = [tag];
+
+      // 只设置后台计时器，不打扰当前播放
       this.intervalId = setInterval(() => this.updateRemainingTime(), 1000);
+      
+      // 更新UI，告诉用户倒计时已开始
       document.getElementById('sleep-status').textContent = `已启用：播放 ${minutes} 分钟，「${tag}」`;
-      this.updateRemainingTime(); MusicPlayer.fadeOut(() => MusicPlayer.playNext());
+      this.updateRemainingTime(); 
+
+      // 移除了下面这行代码，这样就不会立即切歌了
+      // MusicPlayer.fadeOut(() => MusicPlayer.playNext()); 
     },
+
     stop() {
       clearInterval(this.intervalId); this.intervalId = null; this.endTime = null; this.tagFilter = [];
       document.getElementById('sleep-status').textContent = '未启用';
     },
     isSongAllowed(song) { if (!this.isActive() || this.tagFilter.length === 0) return true; return song.tags.some(tag => this.tagFilter.includes(tag)); },
 
-    // --- 核心修复点 C: 赋予倒计时器最高指令权 ---
     updateRemainingTime() {
-      if (!this.isActive()) return; // 如果计时器已经（通过别的方式）被停止了，就直接退出
+      if (!this.isActive()) return;
       
       const msLeft = this.endTime - Date.now();
 
       if (msLeft <= 0) {
-        // 时间到了！
         console.log("Timer has expired. Issuing stop command.");
-        MusicPlayer.stopPlaybackDueToTimer(); // 直接命令播放器停止
-        this.stop(); // 然后清理自己
+        MusicPlayer.stopPlaybackDueToTimer();
+        this.stop();
         return;
       }
 
