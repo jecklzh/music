@@ -47,10 +47,12 @@ document.addEventListener('DOMContentLoaded', () => {
       playPauseBtn: document.createElement('button'), progressContainer: document.getElementById('progress-container'),
       progressBar: document.getElementById('progress-bar'), currentTime: document.getElementById('current-time'),
       duration: document.getElementById('duration'),
+      fxToggle: document.getElementById('fx-toggle'),
     },
     async init() {
       console.log('Player initializing...');
-      this.createCustomControls(); Recommender.init(); await this.loadMusicList(); this.bindEvents();
+      this.createCustomControls(); Recommender.init(); AudioFxController.init(this.dom.audio, this.dom.fxToggle);
+      await this.loadMusicList(); this.bindEvents();
       const lastIndex = localStorage.getItem('lastSongIndex'), lastTime = parseFloat(localStorage.getItem('lastSongTime') || 0);
       if (lastIndex !== null && this.state.musicList[lastIndex]) { this.updatePlayer(parseInt(lastIndex), lastTime, true); }
       else if (this.state.musicList.length > 0) { this.updatePlayer(Recommender.pick(this.state.musicList), 0, true); }
@@ -69,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formatTime(seconds) { const min = Math.floor(seconds / 60); const sec = Math.floor(seconds % 60).toString().padStart(2, '0'); return `${min}:${sec}`; },
     bindEvents() {
       this.dom.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
+      this.dom.fxToggle.addEventListener('click', () => AudioFxController.toggle());
       this.dom.nextBtn.addEventListener('click', () => {
         const song = this.state.musicList[this.state.currentIndex]; const audio = this.dom.audio;
         if (!isNaN(audio.duration) && audio.currentTime < audio.duration * 0.5) { Recommender.recordSkip(song.tags); }
@@ -90,7 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if(duration) { this.dom.progressBar.style.width = `${(currentTime / duration) * 100}%`; this.dom.duration.textContent = this.formatTime(duration); this.dom.currentTime.textContent = this.formatTime(currentTime); }
     },
     seek(e) { const { clientWidth } = this.dom.progressContainer, { offsetX } = e, { duration } = this.dom.audio; if(duration){ this.dom.audio.currentTime = (offsetX / clientWidth) * duration; } },
-    togglePlayPause() { if (this.dom.audio.paused) { this.state.isPausing = false; this.fadeIn(); } else { this.state.isPausing = true; this.fadeOut(); } },
+    togglePlayPause() {
+        AudioFxController.ensureInitialized();
+        if (this.dom.audio.paused) { this.state.isPausing = false; this.fadeIn(); }
+        else { this.state.isPausing = true; this.fadeOut(); } 
+    },
     updatePlayer(index, startTime = 0, initialLoad = false) {
       if (!this.state.musicList[index]) return; this.state.currentIndex = index; const song = this.state.musicList[index];
       this.dom.title.textContent = song.title; this.dom.tags.textContent = song.tags.join(', ');
@@ -106,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
     playSongByIndex(index) { this.state.historyStack.push(this.state.currentIndex); this.fadeOut(() => this.updatePlayer(index)); },
-    
     playNext(isAutoPlay = false) {
       let nextIndex = null, attempts = 0, maxAttempts = 20;
       do {
@@ -114,23 +120,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (SleepController.isSongAllowed(this.state.musicList[candidate])) { nextIndex = candidate; break; }
         attempts++;
       } while (attempts < maxAttempts);
-
       if (nextIndex !== null) {
         this.state.historyStack.push(this.state.currentIndex);
         if (isAutoPlay) { this.updatePlayer(nextIndex); } 
         else { this.fadeOut(() => this.updatePlayer(nextIndex)); }
       } else {
-        console.log('在睡眠模式下，未找到符合条件的歌曲，暂停播放。');
-        this.fadeOut(() => this.dom.audio.pause());
+        console.log('在睡眠模式下，未找到符合条件的歌曲，暂停播放。'); this.fadeOut(() => this.dom.audio.pause());
       }
     },
-    
-    stopPlaybackDueToTimer() {
-        console.log("Timer expired. Fading out and pausing audio.");
-        this.state.isPausing = true;
-        this.fadeOut(() => this.dom.audio.pause());
-    },
-
+    stopPlaybackDueToTimer() { console.log("Timer expired. Fading out and pausing audio."); this.state.isPausing = true; this.fadeOut(() => this.dom.audio.pause()); },
     playPrevious() { if (this.state.historyStack.length > 0) { const prevIndex = this.state.historyStack.pop(); this.updatePlayer(prevIndex); } },
     renderRelatedSongs(currentSong) {
       this.dom.relatedContainer.innerHTML = '';
@@ -147,7 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const query = this.dom.searchInput.value.trim().toLowerCase(); this.dom.searchResults.innerHTML = ''; if (!query) return;
       const results = this.state.musicList.filter(song => song.title.toLowerCase().includes(query) || song.tags.some(tag => tag.toLowerCase().includes(query))).slice(0, 5);
       results.forEach(song => {
-        const resultItem = document.createElement('div'); resultItem.className = 'search-result-item'; resultItem.innerHTML = `${song.title} <span class="song-tags">${song.tags.join(', ')}</span>`;
+        const resultItem = document.createElement('div'); resultItem.className = 'search-result-item';
+        resultItem.innerHTML = `${song.title} <span class="song-tags">${song.tags.join(', ')}</span>`;
         resultItem.addEventListener('click', () => { const songIndex = this.state.musicList.findIndex(item => item.file === song.file); if (songIndex !== -1) this.playSongByIndex(songIndex); this.dom.searchInput.value = ''; this.dom.searchResults.innerHTML = ''; });
         this.dom.searchResults.appendChild(resultItem);
       });
@@ -171,54 +170,100 @@ document.addEventListener('DOMContentLoaded', () => {
       }, interval);
     }
   };
+  
+  // --- 最终的、稳定可靠的音效控制器 ---
+  const AudioFxController = {
+    audioElement: null, toggleButton: null, audioContext: null, sourceNode: null,
+    compressorNode: null, isEnabled: false, isInitialized: false,
+
+    init(audioElement, toggleButton) {
+      this.audioElement = audioElement; this.toggleButton = toggleButton;
+      const savedState = localStorage.getItem('audioFxEnabled') === 'true';
+      if (savedState) { this.toggle(); } 
+    },
+    
+    ensureInitialized() {
+      if (this.isInitialized) return;
+      try {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.sourceNode = this.audioContext.createMediaElementSource(this.audioElement);
+        this.compressorNode = this.audioContext.createDynamicsCompressor();
+        
+        // 核心：建立单一、永不中断的链路
+        this.sourceNode.connect(this.compressorNode);
+        this.compressorNode.connect(this.audioContext.destination);
+        
+        this.isInitialized = true;
+        console.log("Web Audio API Initialized with a permanent chain.");
+        this.applyState();
+      } catch(e) { console.error("Failed to initialize Web Audio API:", e); }
+    },
+
+    toggle() {
+      this.isEnabled = !this.isEnabled;
+      localStorage.setItem('audioFxEnabled', this.isEnabled);
+      if (this.isInitialized) { this.applyState(); }
+      if (this.isEnabled) this.toggleButton.classList.add('active');
+      else this.toggleButton.classList.remove('active');
+    },
+
+    applyState() {
+      if (!this.isInitialized) return;
+      const now = this.audioContext.currentTime;
+      if (this.isEnabled) {
+        console.log("Audio FX Enabled: Setting compressor parameters.");
+        // 设置有效的压缩参数 (车载模式)
+        this.compressorNode.threshold.setValueAtTime(-24, now);
+        this.compressorNode.knee.setValueAtTime(30, now);
+        this.compressorNode.ratio.setValueAtTime(12, now);
+        this.compressorNode.attack.setValueAtTime(0.003, now);
+        this.compressorNode.release.setValueAtTime(0.25, now);
+      } else {
+        console.log("Audio FX Disabled: Setting neutral compressor parameters.");
+        // 设置“中性”参数，让效果器失效，等于直通 (Hi-Fi模式)
+        this.compressorNode.threshold.setValueAtTime(0, now);
+        this.compressorNode.knee.setValueAtTime(0, now);
+        this.compressorNode.ratio.setValueAtTime(1, now);
+        this.compressorNode.attack.setValueAtTime(0, now);
+        this.compressorNode.release.setValueAtTime(0, now);
+      }
+    }
+  };
 
   const SleepController = {
     endTime: null, tagFilter: [], intervalId: null,
     isActive() { return this.endTime !== null; },
-    
-    // --- 核心修复点 ---
-    // 这就是我们这次修改的全部内容
     start(minutes, tag) {
-      this.stop(); // 无论如何，先停止旧的计时器，保证只有一个在运行
-      this.endTime = Date.now() + minutes * 60 * 1000;
-      this.tagFilter = [tag];
-
-      // 只设置后台计时器，不打扰当前播放
+      this.stop(); this.endTime = Date.now() + minutes * 60 * 1000; this.tagFilter = [tag];
       this.intervalId = setInterval(() => this.updateRemainingTime(), 1000);
-      
-      // 更新UI，告诉用户倒计时已开始
       document.getElementById('sleep-status').textContent = `已启用：播放 ${minutes} 分钟，「${tag}」`;
       this.updateRemainingTime(); 
-
-      // 移除了下面这行代码，这样就不会立即切歌了
-      // MusicPlayer.fadeOut(() => MusicPlayer.playNext()); 
     },
-
     stop() {
       clearInterval(this.intervalId); this.intervalId = null; this.endTime = null; this.tagFilter = [];
       document.getElementById('sleep-status').textContent = '未启用';
     },
     isSongAllowed(song) { if (!this.isActive() || this.tagFilter.length === 0) return true; return song.tags.some(tag => this.tagFilter.includes(tag)); },
-
     updateRemainingTime() {
-      if (!this.isActive()) return;
-      
-      const msLeft = this.endTime - Date.now();
-
-      if (msLeft <= 0) {
-        console.log("Timer has expired. Issuing stop command.");
-        MusicPlayer.stopPlaybackDueToTimer();
-        this.stop();
-        return;
-      }
-
+      if (!this.isActive()) return; const msLeft = this.endTime - Date.now();
+      if (msLeft <= 0) { console.log("Timer has expired. Issuing stop command."); MusicPlayer.stopPlaybackDueToTimer(); this.stop(); return; }
       const min = Math.floor(msLeft / 60000); const sec = Math.floor((msLeft % 60000) / 1000).toString().padStart(2, '0');
       document.getElementById('sleep-status').textContent = `剩余: ${min}:${sec}，仅播放「${this.tagFilter[0]}」`;
     }
   };
 
-  document.getElementById('sleep-toggle').addEventListener('click', () => { document.getElementById('sleep-panel').style.display = document.getElementById('sleep-panel').style.display === 'none' ? 'block' : 'none'; });
-  document.querySelectorAll('.tag-btn').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); }); });
+  document.getElementById('sleep-toggle').addEventListener('click', () => { 
+      const panel = document.getElementById('sleep-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      // UI修复：不再改变睡眠图标的颜色
+  });
+  document.querySelectorAll('.tag-btn').forEach(btn => { 
+      btn.addEventListener('click', () => { 
+          // UI修复：恢复标签点击变色
+          document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+      }); 
+  });
   document.getElementById('sleep-minutes').addEventListener('change', () => {
     const selectedTagBtn = document.querySelector('.tag-btn.selected'); const minutes = parseInt(document.getElementById('sleep-minutes').value);
     if (selectedTagBtn && minutes) { SleepController.start(minutes, selectedTagBtn.dataset.tag); }
