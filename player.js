@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Recommender 和 SleepController 对象代码保留原样
+  // Recommender 对象代码保留原样
   const Recommender = {
     skipHistory: {}, currentPreferredTags: [],
     init() { this.skipHistory = JSON.parse(localStorage.getItem('skipHistory') || '{}'); },
@@ -171,15 +171,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   
+  // --- 核心修复点: 全面重写音效控制器 ---
   const AudioFxController = {
     audioElement: null, toggleButton: null, audioContext: null, sourceNode: null,
-    compressorNode: null, gainNode: null, isEnabled: false, isInitialized: false,
+    compressorNode: null, isEnabled: false, isInitialized: false,
 
     init(audioElement, toggleButton) {
       this.audioElement = audioElement; this.toggleButton = toggleButton;
       const savedState = localStorage.getItem('audioFxEnabled') === 'true';
-      this.isEnabled = savedState;
-      if (this.isEnabled) { this.toggleButton.classList.add('active'); }
+      if (savedState) { this.toggle(); } // 初始时调用toggle来应用保存的状态
     },
     
     ensureInitialized() {
@@ -187,47 +187,50 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.sourceNode = this.audioContext.createMediaElementSource(this.audioElement);
-        this.gainNode = this.audioContext.createGain();
         this.compressorNode = this.audioContext.createDynamicsCompressor();
-        this.compressorNode.threshold.setValueAtTime(-24, this.audioContext.currentTime);
-        this.compressorNode.knee.setValueAtTime(30, this.audioContext.currentTime);
-        this.compressorNode.ratio.setValueAtTime(12, this.audioContext.currentTime);
-        this.compressorNode.attack.setValueAtTime(0.003, this.audioContext.currentTime);
-        this.compressorNode.release.setValueAtTime(0.25, this.audioContext.currentTime);
 
-        // --- 核心修复点 A: 永久连接分支 ---
-        // 将音源永久地连接到两个分支（效果器和直通）
+        // 建立单一、永不中断的链路
         this.sourceNode.connect(this.compressorNode);
-        this.sourceNode.connect(this.gainNode);
+        this.compressorNode.connect(this.audioContext.destination);
         
         this.isInitialized = true;
-        console.log("Web Audio API Initialized.");
+        console.log("Web Audio API Initialized with a permanent chain.");
+        // 初始化后，根据当前状态设置效果器参数
         this.applyState();
       } catch(e) { console.error("Failed to initialize Web Audio API:", e); }
     },
 
     toggle() {
-      this.ensureInitialized(); this.isEnabled = !this.isEnabled;
+      this.isEnabled = !this.isEnabled;
       localStorage.setItem('audioFxEnabled', this.isEnabled);
-      this.applyState();
+      if (this.isInitialized) {
+          this.applyState();
+      }
+      // 更新UI
+      if (this.isEnabled) this.toggleButton.classList.add('active');
+      else this.toggleButton.classList.remove('active');
     },
 
-    // --- 核心修复点 B: 更安全的切换逻辑 ---
+    // 通过改变效果器参数来开关效果，而不是改变连接
     applyState() {
       if (!this.isInitialized) return;
+      const now = this.audioContext.currentTime;
       if (this.isEnabled) {
-        console.log("Audio FX Enabled: Routing through Compressor");
-        // 把直通的音量设为0，把效果器的音量设为1
-        this.gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
-        this.compressorNode.connect(this.audioContext.destination);
-        this.toggleButton.classList.add('active');
+        console.log("Audio FX Enabled: Setting compressor parameters.");
+        // 设置有效的压缩参数
+        this.compressorNode.threshold.setValueAtTime(-24, now);
+        this.compressorNode.knee.setValueAtTime(30, now);
+        this.compressorNode.ratio.setValueAtTime(12, now);
+        this.compressorNode.attack.setValueAtTime(0.003, now);
+        this.compressorNode.release.setValueAtTime(0.25, now);
       } else {
-        console.log("Audio FX Disabled: Bypassing Compressor");
-        // 把直通的音量设为1，断开效果器（以节省资源）
-        try { this.compressorNode.disconnect(this.audioContext.destination); } catch(e) {}
-        this.gainNode.gain.setValueAtTime(1, this.audioContext.currentTime);
-        this.gainNode.connect(this.audioContext.destination);
-        this.toggleButton.classList.remove('active');
+        console.log("Audio FX Disabled: Setting neutral compressor parameters.");
+        // 设置“中性”参数，让效果器失效，等于直通
+        this.compressorNode.threshold.setValueAtTime(0, now);    // 阈值设为最大，永远不会触发
+        this.compressorNode.knee.setValueAtTime(0, now);
+        this.compressorNode.ratio.setValueAtTime(1, now);     // 压缩比为1，等于没压缩
+        this.compressorNode.attack.setValueAtTime(0, now);
+        this.compressorNode.release.setValueAtTime(0.1, now);
       }
     }
   };
@@ -254,8 +257,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  document.getElementById('sleep-toggle').addEventListener('click', () => { document.getElementById('sleep-panel').style.display = document.getElementById('sleep-panel').style.display === 'none' ? 'block' : 'none'; });
-  document.querySelectorAll('.tag-btn').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); }); });
+  // --- UI修复点 ---
+  document.getElementById('sleep-toggle').addEventListener('click', () => { 
+      const panel = document.getElementById('sleep-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      // 不再改变图标颜色
+  });
+  document.querySelectorAll('.tag-btn').forEach(btn => { 
+      btn.addEventListener('click', () => { 
+          document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected'); // 恢复点击变色
+      }); 
+  });
   document.getElementById('sleep-minutes').addEventListener('change', () => {
     const selectedTagBtn = document.querySelector('.tag-btn.selected'); const minutes = parseInt(document.getElementById('sleep-minutes').value);
     if (selectedTagBtn && minutes) { SleepController.start(minutes, selectedTagBtn.dataset.tag); }
