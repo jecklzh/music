@@ -3,8 +3,9 @@ body {
   font-family: sans-serif;
   background: #f6f6f6;
   margin: 0;
-  padding: 0;
+  padding: 1rem; /* 增加页面边距 */
   color: #333;
+  box-sizing: border-box;
 }
 
 /* 头部样式 */
@@ -13,6 +14,9 @@ header {
   color: white;
   padding: 1rem;
   text-align: center;
+  border-radius: 10px; /* 增加圆角 */
+  margin: 0 auto 1rem auto; /* 居中并与下方内容隔开 */
+  max-width: 800px;
 }
 
 h1 {
@@ -23,17 +27,12 @@ h1 {
   margin: 0;
 }
 
-.music-icon {
-  font-size: 2.4rem;
-}
-
-.title-text {
-  font-size: 2.1rem;
-}
+.music-icon { font-size: 2.4rem; }
+.title-text { font-size: 2.1rem; }
 
 /* 主内容区 */
 main {
-  padding: 1rem;
+  padding: 0;
   max-width: 800px;
   margin: 0 auto;
 }
@@ -41,17 +40,18 @@ main {
 /* 卡片样式 */
 .card {
   background: white;
-  padding: 1rem;
+  padding: 1.5rem; /* 统一内边距 */
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   margin-bottom: 1rem;
 }
 
+/* 歌曲信息 */
+#song-title { font-size: 1.5rem; margin: 0; }
+.song-tags { color: #777; font-size: 0.9em; margin: 0.5em 0 1em 0; }
+
 /* 音频控件 */
-audio {
-  width: 100%;
-  margin-top: 0.5rem;
-}
+audio { width: 100%; margin-top: 0.5rem; }
 
 /* 按钮样式 */
 button {
@@ -65,135 +65,43 @@ button {
   transition: background 0.2s;
 }
 
-button:hover {
-  background: #666;
-}
-
-/* 统一标签样式 */
-.song-tags {
-  color: #777;
-  font-size: 0.9em;
-  margin: 0.3em 0;
-}
+button:hover { background: #666; }
 
 /* 相关歌曲区域 */
-.related {
-  margin-top: 1rem;
-}
-
-.related-song {
-  background: #fff;
-  padding: 0.5rem;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  transition: background 0.2s;
-}
-
-.related-song:hover {
-  background: #f0f0f0;
-}
-
-.related-song .song-tags {
-  display: inline;
-  margin-left: 0.5em;
-}
+.related { margin-top: 1.5rem; }
+.related h3 { margin-bottom: 0.5rem; }
+.related-song { padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: background 0.2s; }
+.related-song:hover { background: #f0f0f0; }
+.related-song .song-tags { display: inline; margin-left: 0.5em; }
 
 /* 搜索框样式 */
-.search-box {
-  margin-bottom: 1rem;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-
-.search-results {
-  margin-top: 0.5rem;
-}
-
-.search-result-item {
-  padding: 0.5rem;
-  border-radius: 6px;
-  background: #eee;
-  margin-bottom: 0.25rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.search-result-item:hover {
-  background: #ddd;
-}
-
-.search-result-item .song-tags {
-  display: inline;
-  margin-left: 0.5em;
-}
+.search-box input { width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+.search-results { margin-top: 0.5rem; }
+.search-result-item { padding: 0.75rem; border-radius: 6px; margin-bottom: 0.25rem; cursor: pointer; transition: background 0.2s; }
+.search-result-item:hover { background: #e9e9e9; }
+.search-result-item .song-tags { display: inline; margin-left: 0.5em; }
 
 /* 控制按钮组 */
-.controls {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
+.controls { display: flex; justify-content: center; gap: 1rem; margin-top: 0.5rem; }
 
-/* 新增：自定义进度条和时间显示样式 */
-.progress-container {
-  background: #e0e0e0;
-  border-radius: 5px;
-  cursor: pointer;
-  margin: 1rem 0 0.5rem 0;
-  height: 10px;
-  width: 100%;
-}
+/* 自定义进度条和时间显示样式 */
+.progress-container { background: #e0e0e0; border-radius: 5px; cursor: pointer; margin: 1rem 0 0.5rem 0; height: 10px; width: 100%; }
+.progress-bar { background: #007acc; border-radius: 5px; height: 100%; width: 0%; transition: width 0.1s linear; }
+.time-display { font-size: 0.85rem; color: #666; text-align: right; margin-bottom: 0.5rem; }
 
-.progress-bar {
-  background: #007acc;
-  border-radius: 5px;
-  height: 100%;
-  width: 0%; /* 初始宽度为0 */
-  transition: width 0.1s linear; /* 让进度条前进更平滑 */
-}
+/* 自定义播放/暂停按钮样式 */
+#play-pause-btn { font-size: 1rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
 
-.time-display {
-  font-size: 0.85rem;
-  color: #666;
-  text-align: right;
-  margin-bottom: 0.5rem;
-}
+/* 新增：额外控制面板样式 */
+#extra-controls-panel { padding: 1rem 1.5rem; }
+.control-icons { display: flex; gap: 1.5rem; font-size: 1.5rem; align-items: center; }
+.control-icon { cursor: pointer; color: #888; transition: color 0.2s; }
+.control-icon:hover { color: #333; }
+.control-icon.active { color: #007acc; }
 
-/* 调整控制按钮组的布局 */
-.controls {
-  justify-content: center; /* 让按钮居中 */
-}
-
-/* 新增的播放/暂停按钮样式 */
-#play-pause-btn {
-  font-size: 1rem;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#sleep-control button {
-  padding: 0.4rem 0.8rem;
-  border: none;
-  border-radius: 6px;
-  background: #444;
-  color: white;
-  cursor: pointer;
-}
-#sleep-control button:hover {
-  background: #666;
-}
-#sleep-control .tag-btn.selected {
-  background: #007acc;
-}
+/* 睡眠模式面板 */
+#sleep-panel h4, #sleep-panel label { margin-top: 0; font-weight: bold; }
+.tag-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
+.tag-buttons .tag-btn, #sleep-stop-btn { padding: 0.4rem 0.8rem; border: 1px solid #ccc; background: #f0f0f0; color: #333; }
+.tag-buttons .tag-btn:hover, #sleep-stop-btn:hover { background: #ddd; }
+.tag-buttons .tag-btn.selected { background: #007acc; color: white; border-color: #007acc; }
