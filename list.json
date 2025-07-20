@@ -47,7 +47,7 @@
   {
     "title": "V6-TAKE ME HIGHER",
     "file": "V6-TAKE_ME_HIGHER.mp3",
-    "tags": ["奥特曼","日文","迪迦","power"]
+    "tags": ["奥特曼","日文","迪迦","强劲"]
   },
   {
     "title": "矢野立美-Brave Love TIGA",
@@ -82,7 +82,12 @@
   {
     "title": "三重野瞳-ひとつのハートで 《神龙斗士》",
     "file": "三重野瞳-同心.mp3",
-    "tags": ["动漫","神龙斗士"]
+    "tags": ["动漫","神龙斗士","温暖"]
+  },
+  {
+    "title": "nobodyknows-Hero’s Come Back 《火影忍者 疾风传》",
+    "file": "nobodyknows-Hero_s_Come_Back.mp3",
+    "tags": ["动漫","火影忍者","强劲"]
   },
   {
     "title": "福克斯-庆功酒",
@@ -93,6 +98,16 @@
     "title": "群星大佬-明天会更好",
     "file": "群星大佬-明天会更好.mp3",
     "tags": ["华语","经典"]
+  },
+  {
+    "title": "陈光荣-Intro AE 86",
+    "file": "陈光荣-Intro_AE_86.mp3",
+    "tags": ["氛围","头文字D","慢摇"]
+  },
+  {
+    "title": "陈光荣-Lost Good Things",
+    "file": "陈光荣-Lost_Good_Things.mp3",
+    "tags": ["忧伤","头文字D","救赎"]
   },
   {
     "title": "Gilda Buttà-Tarantella in Third Class 《海上钢琴师》",
