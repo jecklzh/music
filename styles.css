@@ -83,7 +83,7 @@ button:hover { background: #666; }
 
 /* 控制按钮组 */
 .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
-.main-controls { display: flex; align-items: center; gap: 1rem; }
+.main-controls { display: flex; flex-grow: 1; justify-content: center; align-items: center; gap: 1rem; }
 .side-controls { display: flex; align-items: center; }
 
 .control-btn {
@@ -97,6 +97,7 @@ button:hover { background: #666; }
   height: 44px;
   border-radius: 50%;
   transition: background-color 0.2s;
+  line-height: 1;
 }
 .control-btn:hover { background-color: #f0f0f0; }
 
@@ -108,7 +109,6 @@ button:hover { background: #666; }
   color: white;
 }
 .play-btn:hover { background-color: #005f9e; }
-
 
 /* 自定义进度条和时间显示样式 */
 .progress-container { background: #e0e0e0; border-radius: 5px; cursor: pointer; margin: 1rem 0 0.5rem 0; height: 10px; width: 100%; }
@@ -130,7 +130,7 @@ button:hover { background: #666; }
 .volume-control { position: relative; }
 .volume-slider-container {
   position: absolute;
-  bottom: 120%;
+  bottom: 150%;
   left: 50%;
   transform: translateX(-50%);
   background-color: rgba(0, 0, 0, 0.7);
@@ -140,7 +140,7 @@ button:hover { background: #666; }
   opacity: 0;
   transition: opacity 0.2s ease-in-out, bottom 0.2s ease-in-out;
 }
-.volume-slider-container.show { display: block; opacity: 1; bottom: 130%; }
+.volume-slider-container.show { display: block; opacity: 1; bottom: 160%; }
 .volume-slider {
   writing-mode: bt-lr;
   -webkit-appearance: slider-vertical;
