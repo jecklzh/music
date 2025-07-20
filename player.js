@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
       searchInput: document.getElementById('tag-search'),
       prevBtn: document.getElementById('prev-btn'),
       nextBtn: document.getElementById('next-btn'),
-      playPauseBtn: document.getElementById('play-pause-btn'),
+      playPauseBtn: document.getElementById('play-pause-btn'), // 直接从HTML获取
       progressContainer: document.getElementById('progress-container'),
       progressBar: document.getElementById('progress-bar'),
       currentTime: document.getElementById('current-time'),
