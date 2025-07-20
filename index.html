@@ -35,15 +35,19 @@
       </div>
 
       <div class="controls">
-        <div id="volume-control" class="volume-control">
-          <span id="volume-icon" class="control-icon"><i class="fas fa-volume-up"></i></span>
-          <div id="volume-slider-container" class="volume-slider-container">
-            <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" orient="vertical">
+        <div class="main-controls">
+          <button id="prev-btn" class="control-btn"><i class="fas fa-step-backward"></i></button>
+          <button id="play-pause-btn" class="control-btn play-btn"><i class="fas fa-play"></i></button>
+          <button id="next-btn" class="control-btn"><i class="fas fa-step-forward"></i></button>
+        </div>
+        <div class="side-controls">
+          <div id="volume-control" class="volume-control">
+            <span id="volume-icon" class="control-icon"><i class="fas fa-volume-up"></i></span>
+            <div id="volume-slider-container" class="volume-slider-container">
+              <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" orient="vertical">
+            </div>
           </div>
         </div>
-
-        <button id="prev-btn">上一首</button>
-        <button id="next-btn">下一首</button>
       </div>
       
       <div class="related">
