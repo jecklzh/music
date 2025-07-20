@@ -47,10 +47,16 @@ document.addEventListener('DOMContentLoaded', () => {
       playPauseBtn: document.createElement('button'), progressContainer: document.getElementById('progress-container'),
       progressBar: document.getElementById('progress-bar'), currentTime: document.getElementById('current-time'),
       duration: document.getElementById('duration'),
+      // 新增：获取音量控制相关元素
+      volumeIcon: document.getElementById('volume-icon'),
+      volumeSliderContainer: document.getElementById('volume-slider-container'),
+      volumeSlider: document.getElementById('volume-slider'),
     },
     async init() {
       console.log('Player initializing...');
       this.createCustomControls(); Recommender.init(); await this.loadMusicList(); this.bindEvents();
+      // 新增：初始化音量
+      this.initializeVolume();
       const lastIndex = localStorage.getItem('lastSongIndex'), lastTime = parseFloat(localStorage.getItem('lastSongTime') || 0);
       if (lastIndex !== null && this.state.musicList[lastIndex]) { this.updatePlayer(parseInt(lastIndex), lastTime, true); }
       else if (this.state.musicList.length > 0) { this.updatePlayer(Recommender.pick(this.state.musicList), 0, true); }
@@ -58,7 +64,15 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     createCustomControls() {
       this.dom.playPauseBtn.id = 'play-pause-btn'; this.dom.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-      const controlsDiv = this.dom.nextBtn.parentElement; controlsDiv.insertBefore(this.dom.playPauseBtn, this.dom.nextBtn);
+      const controlsDiv = this.dom.nextBtn.parentElement; controlsDiv.insertBefore(this.dom.playPauseBtn, this.dom.prevBtn);
+    },
+    // 新增：初始化音量，从localStorage读取或设为默认值
+    initializeVolume() {
+      const savedVolume = localStorage.getItem('playerVolume');
+      const volume = savedVolume !== null ? parseFloat(savedVolume) : 0.75; // 默认75%音量
+      this.dom.audio.volume = volume;
+      this.dom.volumeSlider.value = volume;
+      this.updateVolumeIcon(volume);
     },
     async loadMusicList() {
       try {
@@ -84,6 +98,37 @@ document.addEventListener('DOMContentLoaded', () => {
       this.dom.searchInput.addEventListener('input', () => this.handleSearch());
       this.dom.audio.addEventListener('contextmenu', e => e.preventDefault());
       this.dom.audio.onerror = () => { console.error("音频播放错误:", this.dom.audio.error); this.dom.title.textContent = "音频加载失败, 5秒后尝试下一首..."; setTimeout(() => this.playNext(true), 5000); };
+      
+      // 新增：音量控制事件绑定
+      this.dom.volumeIcon.addEventListener('click', (e) => {
+          e.stopPropagation(); // 防止点击事件冒泡到document
+          this.dom.volumeSliderContainer.classList.toggle('show');
+      });
+      this.dom.volumeSlider.addEventListener('input', (e) => {
+          this.setVolume(e.target.value);
+      });
+      document.addEventListener('click', (e) => {
+          if (!this.dom.volumeSliderContainer.contains(e.target) && !this.dom.volumeIcon.contains(e.target)) {
+              this.dom.volumeSliderContainer.classList.remove('show');
+          }
+      });
+    },
+    // 新增：设置音量并更新图标
+    setVolume(value) {
+        this.dom.audio.volume = value;
+        this.updateVolumeIcon(value);
+        localStorage.setItem('playerVolume', value);
+    },
+    // 新增：根据音量大小改变图标样式
+    updateVolumeIcon(volume) {
+        const icon = this.dom.volumeIcon.querySelector('i');
+        if (volume == 0) {
+            icon.className = 'fas fa-volume-mute';
+        } else if (volume < 0.5) {
+            icon.className = 'fas fa-volume-down';
+        } else {
+            icon.className = 'fas fa-volume-up';
+        }
     },
     updateProgress() {
       const { duration, currentTime } = this.dom.audio;
@@ -155,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     savePlaybackPosition() { if (!isNaN(this.dom.audio.currentTime) && this.dom.audio.currentTime > 0) { localStorage.setItem('lastSongIndex', this.state.currentIndex); localStorage.setItem('lastSongTime', this.dom.audio.currentTime); } },
     fadeOut(callback) {
-      clearInterval(this.state.fadeInterval); const step = 0.05, interval = 25, audio = this.dom.audio;
+      clearInterval(this.state.fadeInterval); const step = this.dom.audio.volume / 10, interval = 25, audio = this.dom.audio;
       if (audio.volume === 0) { if (this.state.isPausing) audio.pause(); if(callback) callback(); return; }
       this.state.fadeInterval = setInterval(() => {
         if (audio.volume > step) { audio.volume = Math.max(0, audio.volume - step); } 
@@ -163,12 +208,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }, interval);
     },
     fadeIn() {
-      clearInterval(this.state.fadeInterval); const step = 0.05, interval = 25, audio = this.dom.audio;
+      const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
+      clearInterval(this.state.fadeInterval); const step = targetVolume / 10, interval = 25, audio = this.dom.audio;
       if(audio.paused) { audio.play().catch(e => console.warn('自动播放可能被浏览器阻止:', e)); }
-      if (audio.volume === this.dom.originalVolume) { return; }
+      if (audio.volume >= targetVolume) return;
       this.state.fadeInterval = setInterval(() => {
-        if (audio.volume < this.dom.originalVolume - step) { audio.volume = Math.min(this.dom.originalVolume, audio.volume + step); } 
-        else { audio.volume = this.dom.originalVolume; clearInterval(this.state.fadeInterval); }
+        if (audio.volume < targetVolume - step) { audio.volume = Math.min(targetVolume, audio.volume + step); } 
+        else { audio.volume = targetVolume; clearInterval(this.state.fadeInterval); }
       }, interval);
     }
   };
