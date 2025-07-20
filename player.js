@@ -40,13 +40,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const MusicPlayer = {
     state: { currentIndex: 0, musicList: [], historyStack: [], fadeInterval: null, isPausing: false },
     dom: {
-      audio: document.getElementById('audio'), originalVolume: 1, title: document.getElementById('song-title'),
-      tags: document.getElementById('song-tags'), relatedContainer: document.getElementById('related-songs'),
-      searchResults: document.getElementById('search-results'), searchInput: document.getElementById('tag-search'),
-      prevBtn: document.getElementById('prev-btn'), nextBtn: document.getElementById('next-btn'),
-      playPauseBtn: document.getElementById('play-pause-btn'), // 直接获取，不再创建
+      audio: document.getElementById('audio'),
+      title: document.getElementById('song-title'),
+      tags: document.getElementById('song-tags'),
+      relatedContainer: document.getElementById('related-songs'),
+      searchResults: document.getElementById('search-results'),
+      searchInput: document.getElementById('tag-search'),
+      prevBtn: document.getElementById('prev-btn'),
+      nextBtn: document.getElementById('next-btn'),
+      playPauseBtn: document.getElementById('play-pause-btn'),
       progressContainer: document.getElementById('progress-container'),
-      progressBar: document.getElementById('progress-bar'), currentTime: document.getElementById('current-time'),
+      progressBar: document.getElementById('progress-bar'),
+      currentTime: document.getElementById('current-time'),
       duration: document.getElementById('duration'),
       volumeIcon: document.getElementById('volume-icon'),
       volumeSliderContainer: document.getElementById('volume-slider-container'),
@@ -54,12 +59,18 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     async init() {
       console.log('Player initializing...');
-      Recommender.init(); await this.loadMusicList(); this.bindEvents();
+      Recommender.init();
+      await this.loadMusicList();
+      this.bindEvents();
       this.initializeVolume();
       const lastIndex = localStorage.getItem('lastSongIndex'), lastTime = parseFloat(localStorage.getItem('lastSongTime') || 0);
-      if (lastIndex !== null && this.state.musicList[lastIndex]) { this.updatePlayer(parseInt(lastIndex), lastTime, true); }
-      else if (this.state.musicList.length > 0) { this.updatePlayer(Recommender.pick(this.state.musicList), 0, true); }
-      else { this.dom.title.textContent = "音乐列表为空"; }
+      if (lastIndex !== null && this.state.musicList[lastIndex]) {
+        this.updatePlayer(parseInt(lastIndex), lastTime, true);
+      } else if (this.state.musicList.length > 0) {
+        this.updatePlayer(Recommender.pick(this.state.musicList), 0, true);
+      } else {
+        this.dom.title.textContent = "音乐列表为空";
+      }
     },
     initializeVolume() {
       const savedVolume = localStorage.getItem('playerVolume');
@@ -138,7 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
     playSongByIndex(index) { this.state.historyStack.push(this.state.currentIndex); this.fadeOut(() => this.updatePlayer(index)); },
-    
     playNext(isAutoPlay = false) {
       let nextIndex = null, attempts = 0, maxAttempts = 20;
       do {
@@ -156,13 +166,11 @@ document.addEventListener('DOMContentLoaded', () => {
         this.fadeOut(() => this.dom.audio.pause());
       }
     },
-    
     stopPlaybackDueToTimer() {
         console.log("Timer expired. Fading out and pausing audio.");
         this.state.isPausing = true;
         this.fadeOut(() => this.dom.audio.pause());
     },
-
     playPrevious() { if (this.state.historyStack.length > 0) { const prevIndex = this.state.historyStack.pop(); this.updatePlayer(prevIndex); } },
     renderRelatedSongs(currentSong) {
       this.dom.relatedContainer.innerHTML = '';
@@ -197,8 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     fadeIn() {
       const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
-      this.dom.audio.volume = 0; // 从0开始淡入
-      clearInterval(this.state.fadeInterval); const step = targetVolume / 10, interval = 25, audio = this.dom.audio;
+      this.dom.audio.volume = 0;
+      clearInterval(this.state.fadeInterval); const step = targetVolume > 0 ? targetVolume / 10 : 0.1, interval = 25, audio = this.dom.audio;
       if(audio.paused) { audio.play().catch(e => console.warn('自动播放可能被浏览器阻止:', e)); }
       if (audio.volume >= targetVolume) return;
       this.state.fadeInterval = setInterval(() => {
