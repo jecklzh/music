@@ -95,7 +95,7 @@ button:hover { background: #666; }
 /* 睡眠控制面板 */
 /* 修复点：为恢复的卡片添加样式 */
 #sleep-control-card { padding: 1rem 1.5rem; }
-.control-icon { cursor: pointer; color: #888; transition: color 0.2s; font-size: 1.5rem; }
+.control-icon { cursor: pointer; transition: color 0.2s; font-size: 1.5rem; }
 /* 修复点：移除 :hover 伪类，完全由 JS 控制高亮 */
 /* .control-icon:hover { color: #333; } */ 
 
