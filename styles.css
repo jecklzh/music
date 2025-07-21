@@ -27,7 +27,7 @@ header {
   text-align: center;
   border-radius: 12px;
   margin: 0 auto 1rem auto;
-  max-width: 1100px; /* 调整最大宽度以适应新布局 */
+  max-width: 800px;
   box-shadow: 0 4px 12px var(--shadow-color);
   border: 1px solid var(--border-color);
 }
@@ -35,23 +35,11 @@ h1 { display: flex; justify-content: center; align-items: center; gap: 0.75rem; 
 .music-icon { font-size: 2.2rem; color: var(--primary-color); }
 .title-text { font-size: 1.8rem; font-weight: 600; }
 
-/* 核心布局：主容器 */
-.main-container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 1rem;
-  max-width: 1100px;
+/* 主内容区 */
+main {
+  padding: 0;
+  max-width: 800px;
   margin: 0 auto;
-}
-.player-main { flex-grow: 1; min-width: 0; } /* 允许播放器主体收缩 */
-.side-panel {
-  width: 300px;
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  padding: 1rem;
 }
 
 /* 卡片样式 */
@@ -106,8 +94,14 @@ audio { display: none; }
 .progress-bar { background: var(--primary-color); border-radius: 5px; height: 100%; width: 0%; transition: width 0.1s linear; }
 .time-display { font-size: 0.85rem; color: #666; text-align: right; margin-bottom: 1rem; }
 
-/* 侧边面板图标与弹出窗口 */
-.control-group { position: relative; }
+/* 倒计时控制 */
+#sleep-control-container {
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: flex-end; /* 将图标靠右 */
+  align-items: center;
+  margin-bottom: 1rem;
+}
 .control-icon {
   cursor: pointer; color: var(--subtle-text-color);
   font-size: 1.5rem; padding: 0.5rem;
@@ -118,20 +112,15 @@ audio { display: none; }
 .popup-panel {
   visibility: hidden; opacity: 0;
   position: absolute;
-  bottom: 130%; left: 50%;
-  transform: translateX(-50%);
+  bottom: 130%; right: 0; /* 靠右显示 */
+  transform: translateX(0%); /* 调整水平偏移 */
   background: var(--card-background);
   border-radius: 10px; padding: 1rem;
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
   transition: opacity 0.2s ease, visibility 0.2s ease;
   width: 200px; z-index: 10;
 }
-.control-group .control-icon.active + .popup-panel { visibility: visible; opacity: 1; }
-
-/* 音量条 */
-.volume-slider { width: 100%; }
-
-/* 睡眠面板 */
+#sleep-control-container:hover #sleep-panel { visibility: visible; opacity: 1; }
 #sleep-panel label { font-weight: 600; font-size: 0.9rem; display: block; margin-bottom: 0.5rem; }
 .tag-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
 .tag-buttons .tag-btn, #sleep-stop-btn, #sleep-minutes {
@@ -144,13 +133,51 @@ audio { display: none; }
 #sleep-minutes { margin-bottom: 1rem; }
 #sleep-status { margin-top: 1rem; font-size: 0.9rem; color: var(--subtle-text-color); text-align: center; }
 
-/* 响应式设计：手机端智能堆叠 */
-@media (max-width: 900px) {
-  .main-container {
-    flex-direction: column;
+/* 音量控制 */
+.volume-control-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 100;
+}
+#volume-control {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background-color: var(--card-background);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+#volume-icon {
+  cursor: pointer; color: var(--subtle-text-color);
+  font-size: 1.5rem; margin-right: 1rem;
+}
+#volume-slider-container {
+  position: relative;
+  width: 150px;
+  height: 30px;
+}
+#volume-slider-container .popup-panel {
+  bottom: 120%; left: 0; transform: none;
+  width: 100%;
+}
+.volume-slider { width: 100%; }
+
+/* 响应式调整 (如果需要) */
+@media (max-width: 600px) {
+  .volume-control-container {
+    bottom: 1rem;
+    right: 1rem;
   }
-  .side-panel {
-    width: 100%;
-    order: 3; /* 让控制台显示在播放器下方 */
+  #volume-control {
+    padding: 0.5rem;
+  }
+  #volume-icon {
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+  }
+  #volume-slider-container {
+    width: 100px;
+    height: 20px;
   }
 }
