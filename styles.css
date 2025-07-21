@@ -125,7 +125,7 @@ button:hover { background: #f0f0f0; }
 
 /* 睡眠控制面板 */
 #sleep-control-card { padding: 1rem 1.5rem; }
-.control-icon { cursor: pointer; transition: color 0.2s; font-size: 1.2rem; } /* 缩小图标尺寸以协调 */
+.control-icon { cursor: pointer; color: #888; transition: color 0.2s; font-size: 1.2rem; } /* 缩小图标尺寸以协调 */
 .control-icon:hover { color: #333; }
 #sleep-panel { margin-top: 1rem; }
 #sleep-panel label { font-weight: 600; font-size: 0.9rem; }
