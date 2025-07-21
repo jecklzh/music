@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
       duration: document.getElementById('duration'),
       volumeIcon: document.getElementById('volume-icon'),
       volumeSlider: document.getElementById('volume-slider'),
+      sleepToggle: document.getElementById('sleep-toggle'),
+      sleepPanel: document.getElementById('sleep-panel'),
     },
     async init() {
       console.log('Player initializing...');
@@ -106,6 +108,32 @@ document.addEventListener('DOMContentLoaded', () => {
       this.dom.volumeSlider.addEventListener('input', (e) => {
           this.setVolume(e.target.value);
       });
+
+      // 统一处理弹出面板的点击逻辑
+      document.addEventListener('click', (e) => {
+        const isClickInsideVolume = this.dom.volumeIcon.parentElement.contains(e.target);
+        const isClickInsideSleep = this.dom.sleepToggle.parentElement.contains(e.target);
+        
+        if (!isClickInsideVolume) {
+          this.dom.volumeIcon.classList.remove('active');
+        }
+        if (!isClickInsideSleep) {
+          this.dom.sleepToggle.classList.remove('active');
+        }
+      });
+
+      this.dom.volumeIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.dom.sleepToggle.classList.remove('active');
+        this.dom.volumeIcon.classList.toggle('active');
+      });
+
+      this.dom.sleepToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.dom.volumeIcon.classList.remove('active');
+        this.dom.sleepToggle.classList.toggle('active');
+      });
+
     },
     setVolume(value) {
         this.dom.audio.volume = value;
@@ -230,14 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // 事件监听器部分
-  const sleepToggle = document.getElementById('sleep-toggle');
-  if(sleepToggle) {
-    sleepToggle.addEventListener('click', () => { 
-        const panel = document.getElementById('sleep-panel');
-        panel.classList.toggle('show'); // 示例，具体显示隐藏逻辑可能不同
-    });
-  }
-
   document.querySelectorAll('.tag-btn').forEach(btn => { 
       btn.addEventListener('click', () => { 
           document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
