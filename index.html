@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Music</title>
-  <link rel="stylesheet" href="styles.css?v=1.1"> 
+  <link rel="stylesheet" href="styles.css?v=1.2"> 
 </head>
 <body>
   <header>
@@ -15,70 +15,71 @@
       <span class="title-text">Music</span>
     </h1>
   </header>
-  <main>
-    <div class="search-box card">
-      <input type="text" id="tag-search" placeholder="标签">
-      <div class="search-results" id="search-results"></div>
-    </div>
-
-    <div id="player" class="card">
-      <h2 id="song-title">加载中...</h2>
-      <p class="song-tags" id="song-tags"></p>
-      
-      <audio id="audio" controlsList="nodownload"></audio>
-
-      <div class="progress-container" id="progress-container">
-        <div class="progress-bar" id="progress-bar"></div>
-      </div>
-      <div class="time-display">
-        <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+  
+  <div class="main-container">
+    
+    <main class="player-main">
+      <div class="search-box card">
+        <input type="text" id="tag-search" placeholder="标签">
+        <div class="search-results" id="search-results"></div>
       </div>
 
-      <div class="controls">
-        <button id="prev-btn" class="control-btn"><i class="fas fa-step-backward"></i></button>
-        <button id="play-pause-btn" class="control-btn play-btn"><i class="fas fa-play"></i></button>
-        <button id="next-btn" class="control-btn"><i class="fas fa-step-forward"></i></button>
-      </div>
-      
-      <div class.related">
-        <h3><i class="fas fa-music" style="margin-right: 0.5rem;"></i>相关推荐</h3>
-        <div id="related-songs"></div>
-      </div>
-    </div>
+      <div id="player" class="card">
+        <h2 id="song-title">加载中...</h2>
+        <p class="song-tags" id="song-tags"></p>
+        
+        <audio id="audio" controlsList="nodownload"></audio>
 
-    <div class="side-panel-container">
-      <div class="card side-panel">
-        <div id="volume-control" class="control-group">
-          <span id="volume-icon" class="control-icon"><i class="fas fa-volume-up"></i></span>
-          <div id="volume-slider-container" class="volume-slider-container">
-            <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01">
-          </div>
+        <div class="progress-container" id="progress-container">
+          <div class="progress-bar" id="progress-bar"></div>
         </div>
-        <div class="control-group">
-          <span id="sleep-toggle" class="control-icon" title="睡眠倒计时">
-            <i class="fas fa-clock"></i>
-          </span>
-          <div id="sleep-panel" class="control-popup">
-            <label>请选择一个标签：</label>
-            <div class="tag-buttons">
-              <button class="tag-btn" data-tag="relax">relax</button>
-              <button class="tag-btn" data-tag="钢琴">钢琴</button>
-            </div>
-            <label>倒计时：</label>
-            <select id="sleep-minutes">
-              <option value="">时间</option>
-              <option value="5">5 分钟</option>
-              <option value="10">10 分钟</option>
-              <option value="15">15 分钟</option>
-            </select>
-            <button id="sleep-stop-btn">停止</button>
-            <div id="sleep-status">未启用</div>
-          </div>
+        <div class="time-display">
+          <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+        </div>
+
+        <div class="controls">
+          <button id="prev-btn" class="control-btn"><i class="fas fa-step-backward"></i></button>
+          <button id="play-pause-btn" class="control-btn play-btn"><i class="fas fa-play"></i></button>
+          <button id="next-btn" class="control-btn"><i class="fas fa-step-forward"></i></button>
+        </div>
+        
+        <div class="related">
+          <h3><i class="fas fa-music" style="margin-right: 0.5rem;"></i>相关推荐</h3>
+          <div id="related-songs"></div>
         </div>
       </div>
-    </div>
+    </main>
+    
+    <aside class="side-panel card">
+      <div class="control-group" id="volume-control">
+        <span id="volume-icon" class="control-icon"><i class="fas fa-volume-up"></i></span>
+        <div id="volume-slider-container" class="popup-panel">
+          <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01">
+        </div>
+      </div>
+      <div class="control-group" id="sleep-control">
+        <span id="sleep-toggle" class="control-icon" title="睡眠倒计时"><i class="fas fa-clock"></i></span>
+        <div id="sleep-panel" class="popup-panel">
+          <label>请选择一个标签：</label>
+          <div class="tag-buttons">
+            <button class="tag-btn" data-tag="relax">relax</button>
+            <button class="tag-btn" data-tag="钢琴">钢琴</button>
+          </div>
+          <label>倒计时：</label>
+          <select id="sleep-minutes">
+            <option value="">时间</option>
+            <option value="5">5 分钟</option>
+            <option value="10">10 分钟</option>
+            <option value="15">15 分钟</option>
+          </select>
+          <button id="sleep-stop-btn">停止</button>
+          <div id="sleep-status">未启用</div>
+        </div>
+      </div>
+    </aside>
 
-  </main>
-  <script src="player.js?v=1.1"></script> 
+  </div>
+
+  <script src="player.js?v=1.2"></script> 
 </body>
 </html>
