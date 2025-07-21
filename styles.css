@@ -1,24 +1,35 @@
-/* 全局样式 */
+/* 全局样式与调色板 */
+:root {
+  --background-color: #f0f2f5; /* 更柔和的背景灰 */
+  --card-background: #ffffff;
+  --text-color: #333;
+  --subtle-text-color: #888;
+  --primary-color: #007acc;
+  --primary-hover-color: #005f9e;
+  --border-color: #e8e8e8;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: #f4f7f6;
+  background: var(--background-color);
   margin: 0;
   padding: 1rem;
-  color: #333;
+  color: var(--text-color);
   box-sizing: border-box;
 }
 
 /* 头部样式 */
 header {
-  background: #fff;
-  color: #333;
+  background: var(--card-background);
+  color: var(--text-color);
   padding: 1rem;
   text-align: center;
   border-radius: 12px;
   margin: 0 auto 1rem auto;
   max-width: 800px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  border: 1px solid #e8e8e8;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  border: 1px solid var(--border-color);
 }
 
 h1 {
@@ -29,7 +40,7 @@ h1 {
   margin: 0;
 }
 
-.music-icon { font-size: 2.2rem; color: #007acc; }
+.music-icon { font-size: 2.2rem; color: var(--primary-color); }
 .title-text { font-size: 1.8rem; font-weight: 600; }
 
 /* 主内容区 */
@@ -37,125 +48,131 @@ main {
   padding: 0;
   max-width: 800px;
   margin: 0 auto;
+  position: relative; /* 为侧边面板定位 */
 }
 
 /* 卡片样式 */
 .card {
-  background: white;
+  background: var(--card-background);
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  border: 1px solid #e8e8e8;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  border: 1px solid var(--border-color);
   margin-bottom: 1rem;
 }
 
 /* 歌曲信息 */
 #song-title { font-size: 1.5rem; margin: 0 0 0.25rem 0; font-weight: 600; text-align: center; }
-.song-tags { color: #888; font-size: 0.9em; margin: 0.25em 0 1.5em 0; text-align: center; }
+.song-tags { color: var(--subtle-text-color); font-size: 0.9em; margin: 0.25em 0 1.5em 0; text-align: center; }
 
 /* 音频控件 (隐藏原生) */
 audio { display: none; }
-
-/* 基础按钮样式 (用于睡眠面板等) */
-button {
-  padding: 0.5rem 1rem;
-  margin: 0.25rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #f9f9f9;
-  color: #333;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-button:hover { background: #f0f0f0; }
 
 /* 相关歌曲区域 */
 .related { margin-top: 1.5rem; }
 .related h3 { margin-bottom: 0.5rem; font-size: 1rem; font-weight: 600; }
 .related-song { padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: background 0.2s; }
 .related-song:hover { background: #f5f5f5; }
-.related-song .song-tags { display: inline; margin-left: 0.5em; color: #888; font-size: 0.9em; }
+.related-song .song-tags { display: inline; margin-left: 0.5em; color: var(--subtle-text-color); font-size: 0.9em; }
 
 /* 搜索框样式 */
 .search-box input { width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
 .search-results { margin-top: 0.5rem; }
 .search-result-item { padding: 0.75rem; border-radius: 6px; margin-bottom: 0.25rem; cursor: pointer; transition: background 0.2s; }
 .search-result-item:hover { background: #f5f5f5; }
-.search-result-item .song-tags { display: inline; margin-left: 0.5em; color: #888; font-size: 0.9em; }
+.search-result-item .song-tags { display: inline; margin-left: 0.5em; color: var(--subtle-text-color); font-size: 0.9em; }
 
 /* 控制区美学升级 */
-.controls { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
-.main-controls { display: flex; flex-grow: 1; justify-content: center; align-items: center; gap: 1.5rem; }
-.side-controls { display: flex; align-items: center; }
-
+.controls { display: flex; justify-content: center; align-items: center; margin-top: 1rem; }
+.main-controls { display: flex; justify-content: center; align-items: center; gap: 1.5rem; }
 .control-btn {
-  background: #fff;
-  border: 1px solid #ddd;
+  background: none;
+  border: 1px solid transparent;
   color: #555;
   font-size: 1rem;
   cursor: pointer;
   padding: 0;
-  width: 44px;
-  height: 44px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.control-btn:hover { background-color: #f5f5f5; border-color: #ccc; }
+.control-btn:hover { background-color: #f0f0f0; }
 
 .play-btn {
   font-size: 1.5rem;
   width: 64px;
   height: 64px;
-  background-color: #007acc;
+  background-color: var(--primary-color);
   color: white;
-  border: none;
   box-shadow: 0 4px 10px rgba(0, 122, 204, 0.3);
 }
-/* 修复播放图标不居中的问题 */
 .play-btn .fa-play { padding-left: 4px; }
-.play-btn:hover { background-color: #005f9e; }
+.play-btn:hover { background-color: var(--primary-hover-color); }
 
 /* 自定义进度条和时间显示样式 */
-.progress-container { background: #e9ecef; border-radius: 5px; cursor: pointer; margin: 1rem 0 0.5rem 0; height: 8px; width: 100%; }
-.progress-bar { background: #007acc; border-radius: 5px; height: 100%; width: 0%; transition: width 0.1s linear; }
-.time-display { font-size: 0.85rem; color: #666; text-align: right; margin-bottom: 0.5rem; }
+.progress-container { background: #e9ecef; border-radius: 5px; cursor: pointer; margin: 1.5rem 0 0.5rem 0; height: 8px; width: 100%; }
+.progress-bar { background: var(--primary-color); border-radius: 5px; height: 100%; width: 0%; transition: width 0.1s linear; }
+.time-display { font-size: 0.85rem; color: #666; text-align: right; margin-bottom: 1rem; }
 
-/* 睡眠控制面板 */
-#sleep-control-card { padding: 1rem 1.5rem; }
-.control-icon { cursor: pointer; color: #888; transition: color 0.2s; font-size: 1.2rem; } /* 缩小图标尺寸以协调 */
-.control-icon:hover { color: #333; }
-#sleep-panel { margin-top: 1rem; }
-#sleep-panel label { font-weight: 600; font-size: 0.9rem; }
-.tag-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
-.tag-buttons .tag-btn, #sleep-stop-btn { padding: 0.4rem 0.8rem; border: 1px solid #ccc; background: #fff; color: #333; }
-.tag-buttons .tag-btn:hover, #sleep-stop-btn:hover { background: #f5f5f5; border-color: #bbb; }
-.tag-buttons .tag-btn.selected { background: #007acc; color: white; border-color: #007acc; }
+/* 侧边控制面板 */
+.side-panel-container {
+    position: fixed;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    z-index: 100;
+}
+.side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.75rem;
+}
+.control-group { position: relative; display: flex; justify-content: center; }
+.control-icon { cursor: pointer; color: var(--subtle-text-color); transition: color 0.2s; font-size: 1.5rem; padding: 0.5rem; }
+.control-icon:hover { color: var(--text-color); }
 
-/* 音量控制样式 */
-.volume-control { position: relative; }
-.volume-slider-container {
-  position: absolute;
-  bottom: 150%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(5px);
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 1rem 0.5rem;
-  display: none;
+/* 弹出式面板 (音量和睡眠) */
+.control-popup {
+  visibility: hidden;
   opacity: 0;
-  transition: opacity 0.2s ease-in-out, bottom 0.2s ease-in-out;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  position: absolute;
+  right: 120%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--card-background);
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  width: 200px;
 }
-.volume-slider-container.show { display: block; opacity: 1; bottom: 160%; }
-.volume-slider {
-  writing-mode: bt-lr;
-  -webkit-appearance: slider-vertical;
-  width: 8px;
-  height: 100px;
-  padding: 0 5px;
+.control-group:hover .control-popup {
+  visibility: visible;
+  opacity: 1;
 }
+
+/* 音量条 */
+.volume-slider-container { padding: 0 !important; }
+.volume-slider { width: 100%; }
+
+/* 睡眠面板 */
+#sleep-panel label { font-weight: 600; font-size: 0.9rem; display: block; margin-bottom: 0.5rem;}
+.tag-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.tag-buttons .tag-btn, #sleep-stop-btn, #sleep-minutes {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    background: #fff;
+    color: #333;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.tag-buttons .tag-btn:hover { background: #f5f5f5; }
+.tag-buttons .tag-btn.selected { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+#sleep-minutes { margin-bottom: 1rem; }
+#sleep-status { margin-top: 1rem; font-size: 0.9rem; color: var(--subtle-text-color); text-align: center; }
