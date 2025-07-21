@@ -1,200 +1,179 @@
-/* 页面基础设置 */
+/* 新版 styles.css：风格更柔和、色彩更协调、整体更有设计感 */
+
+:root {
+  --background: #f5f6f8;
+  --surface: #ffffff;
+  --text: #222;
+  --accent: #4caf50;
+  --accent-hover: #43a047;
+  --muted: #888;
+  --border: #ddd;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --radius: 12px;
+  --font-family: 'Inter', 'Helvetica Neue', sans-serif;
+}
+
 body {
-  font-family: 'Helvetica Neue', sans-serif;
-  background-color: #f5f5f5;
-  color: #333;
+  font-family: var(--font-family);
+  background: var(--background);
+  color: var(--text);
   margin: 0;
   padding: 0;
+  line-height: 1.6;
 }
 
 header {
-  background-color: #ffffff;
-  padding: 1rem;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-header h1 {
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #222;
-}
-
-.music-icon {
-  margin-right: 0.5rem;
-}
-
-main {
-  padding: 1rem;
-  max-width: 800px;
-  margin: auto;
-}
-
-.card {
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-/* 搜索栏 */
-.search-box input {
-  width: 100%;
-  padding: 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 1rem;
-  box-sizing: border-box;
-}
-
-.search-results {
-  margin-top: 0.5rem;
-  font-size: 0.95rem;
-  color: #444;
-}
-
-.search-result-item {
-  margin-bottom: 0.3rem;
-  cursor: pointer;
-}
-
-/* 播放器 */
-#song-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin: 0 0 0.5rem 0;
-}
-
-.song-tags {
-  font-size: 0.95rem;
-  color: #666;
-}
-
-.controls {
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1.2rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1rem;
+  border-radius: 0 0 var(--radius) var(--radius);
 }
 
-.main-controls {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
+header h1 {
+  font-size: 1.4rem;
+  margin: 0;
+  color: var(--accent);
 }
 
-.side-controls {
-  width: 80px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.control-btn {
-  background-color: #ffffff;
-  border: none;
-  border-radius: 50%;
-  padding: 0.8rem;
-  font-size: 1.2rem;
-  color: #444;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  transition: background 0.3s, transform 0.2s;
-}
-
-.control-btn:hover {
-  background-color: #e0e0e0;
-  transform: scale(1.05);
-}
-
-/* 相关歌曲 */
-.related h3 {
-  font-size: 1rem;
-  color: #333;
+#search-section {
   display: flex;
   align-items: center;
+  gap: 1rem;
 }
 
-.related-song {
-  margin: 0.3rem 0;
-  cursor: pointer;
-  font-size: 0.95rem;
-  color: #444;
+#tag-search {
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  font-size: 1rem;
+  background: #fff;
+  width: 200px;
+  transition: border 0.3s;
 }
 
-/* 睡眠播放控制 */
-#sleep-toggle {
+#tag-search:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+#search-results, #related-songs {
+  padding: 0.5rem 1rem;
+  margin-top: 0.4rem;
+  background: #fff;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.search-result-item, .related-song {
   cursor: pointer;
-  font-size: 1.3rem;
-  color: #666;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.search-result-item:last-child, .related-song:last-child {
+  border-bottom: none;
+}
+
+.song-tags {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+main {
+  padding: 2rem;
+  max-width: 760px;
+  margin: auto;
+}
+
+#player-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+button {
+  background: var(--accent);
+  border: none;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  color: white;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+  background: var(--accent-hover);
+  transform: scale(1.04);
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+button.selected {
+  background: #388e3c;
+}
+
+#audio {
+  display: none;
+}
+
+.volume-container {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+input[type="range"] {
+  width: 100px;
+  accent-color: var(--accent);
 }
 
 #sleep-panel {
   margin-top: 1rem;
-}
-
-.tag-btn {
-  padding: 0.4rem 0.8rem;
-  background-color: #eee;
-  border: none;
-  border-radius: 5px;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.tag-btn.selected {
-  background-color: #4caf50;
-  color: white;
-}
-
-#sleep-minutes {
-  width: 100%;
-  padding: 0.4rem;
-  border-radius: 6px;
-  margin-top: 0.25rem;
-  font-size: 0.95rem;
-}
-
-#sleep-stop-btn {
-  margin-top: 0.5rem;
-  padding: 0.4rem 0.8rem;
-  background-color: #ccc;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+  padding: 1rem;
+  background: #fff;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
 }
 
 #sleep-status {
   margin-top: 0.5rem;
-  font-size: 0.9rem;
-  color: #666;
+  font-size: 0.95rem;
+  color: var(--muted);
 }
 
-/* 音量滑块 */
-input[type=range] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 4px;
-  background: #ccc;
-  border-radius: 2px;
-  outline: none;
+footer {
+  margin-top: 3rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #aaa;
 }
 
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  background: #4caf50;
-  border-radius: 50%;
-  cursor: pointer;
+@media (max-width: 600px) {
+  main {
+    padding: 1rem;
+  }
+  #tag-search {
+    width: 100%;
+  }
+  #player-controls {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  input[type="range"] {
+    width: 80%;
+  }
 }
 
-input[type=range]::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  background: #4caf50;
-  border-radius: 50%;
-  cursor: pointer;
-}
+/* 其他组件、按钮、标签颜色可以按需补充 */
