@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Music</title>
-  <link rel="stylesheet" href="styles.css?v=1.3">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header>
@@ -15,7 +15,6 @@
       <span class="title-text">Music</span>
     </h1>
   </header>
-
   <main>
     <div class="search-box card">
       <input type="text" id="tag-search" placeholder="标签">
@@ -25,7 +24,7 @@
     <div id="player" class="card">
       <h2 id="song-title">加载中...</h2>
       <p class="song-tags" id="song-tags"></p>
-
+      
       <audio id="audio" controlsList="nodownload"></audio>
 
       <div class="progress-container" id="progress-container">
@@ -36,49 +35,52 @@
       </div>
 
       <div class="controls">
-        <button id="prev-btn" class="control-btn"><i class="fas fa-step-backward"></i></button>
-        <button id="play-pause-btn" class="control-btn play-btn"><i class="fas fa-play"></i></button>
-        <button id="next-btn" class="control-btn"><i class="fas fa-step-forward"></i></button>
+        <div class="main-controls">
+          <button id="prev-btn" class="control-btn"><i class="fas fa-step-backward"></i></button>
+          <button id="play-pause-btn" class="control-btn play-btn"><i class="fas fa-play"></i></button>
+          <button id="next-btn" class="control-btn"><i class="fas fa-step-forward"></i></button>
+        </div>
+        <div class="side-controls">
+          <div id="volume-control" class="volume-control">
+            <span id="volume-icon" class="control-icon"><i class="fas fa-volume-up"></i></span>
+            <div id="volume-slider-container" class="volume-slider-container">
+              <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" orient="vertical">
+            </div>
+          </div>
+        </div>
       </div>
-
+      
       <div class="related">
         <h3><i class="fas fa-music" style="margin-right: 0.5rem;"></i>相关推荐</h3>
         <div id="related-songs"></div>
       </div>
+    </div>
 
-      <div class="card" id="sleep-control-container">
-        <span id="sleep-toggle" class="control-icon" title="睡眠倒计时">
-          <i class="fas fa-clock"></i>
-        </span>
-        <div id="sleep-panel" class="popup-panel">
-          <label>请选择一个标签：</label>
-          <div class="tag-buttons">
-            <button class="tag-btn" data-tag="relax">relax</button>
-            <button class="tag-btn" data-tag="钢琴">钢琴</button>
-          </div>
-          <label>倒计时：</label>
-          <select id="sleep-minutes">
-            <option value="">时间</option>
-            <option value="5">5 分钟</option>
-            <option value="10">10 分钟</option>
-            <option value="15">15 分钟</option>
-          </select>
-          <button id="sleep-stop-btn">停止</button>
-          <div id="sleep-status">未启用</div>
+    <div class="card" id="sleep-control-card">
+      <span id="sleep-toggle" class="control-icon" title="睡眠倒计时">
+        <i class="fas fa-clock"></i>
+      </span>
+      <div id="sleep-panel" style="display: none; margin-top: 1rem;">
+        <label style="font-weight: bold;">请选择一个标签：</label>
+        <div class="tag-buttons" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0;">
+          <button class="tag-btn" data-tag="relax">relax</button>
+          <button class="tag-btn" data-tag="钢琴">钢琴</button>
         </div>
+        <label style="font-weight: bold;">倒计时：</label>
+        <select id="sleep-minutes" style="width: 100%; padding: 0.4rem; border-radius: 6px; margin-top: 0.25rem;">
+          <option value="">时间</option>
+          <option value="5">5 分钟</option>
+          <option value="10">10 分钟</option>
+          <option value="15">15 分钟</option>
+        </select>
+        <div style="margin-top: 0.5rem;">
+          <button id="sleep-stop-btn">停止</button>
+        </div>
+        <div id="sleep-status" style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">未启用</div>
       </div>
-
     </div>
   </main>
-  <aside class="volume-control-container">
-    <div class="card" id="volume-control">
-      <span id="volume-icon" class="control-icon"><i class="fas fa-volume-up"></i></span>
-      <div id="volume-slider-container" class="popup-panel">
-        <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01">
-      </div>
-    </div>
-  </aside>
 
-  <script src="player.js?v=1.3"></script>
+  <script src="player.js"></script>
 </body>
 </html>
