@@ -196,7 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
     savePlaybackPosition() { if (!isNaN(this.dom.audio.currentTime) && this.dom.audio.currentTime > 0) { localStorage.setItem('lastSongIndex', this.state.currentIndex); localStorage.setItem('lastSongTime', this.dom.audio.currentTime); } },
     fadeOut(callback) {
       const initialVolume = this.dom.audio.volume;
-      if (initialVolume === 0) { if (this.state.isPausing) this.dom.audio.pause(); if (callback) callback(); return; }
+//      if (initialVolume === 0) { if (this.state.isPausing) this.dom.audio.pause(); if (callback) callback(); return; }
+      if (initialVolume === 0) { setTimeout(() => { if (this.state.isPausing) this.dom.audio.pause(); if (callback) callback();}, 300); return;}
       clearInterval(this.state.fadeInterval); const step = initialVolume / 10, interval = 25, audio = this.dom.audio;
       this.state.fadeInterval = setInterval(() => {
         if (audio.volume > step) { audio.volume = Math.max(0, audio.volume - step); } 
