@@ -48,15 +48,14 @@ document.addEventListener('DOMContentLoaded', () => {
       searchInput: document.getElementById('tag-search'),
       prevBtn: document.getElementById('prev-btn'),
       nextBtn: document.getElementById('next-btn'),
-      playPauseBtn: document.getElementById('play-pause-btn'),
+      playPauseBtn: document.getElementById('play-pause-btn'), // 直接从HTML获取
       progressContainer: document.getElementById('progress-container'),
       progressBar: document.getElementById('progress-bar'),
       currentTime: document.getElementById('current-time'),
       duration: document.getElementById('duration'),
       volumeIcon: document.getElementById('volume-icon'),
+      volumeSliderContainer: document.getElementById('volume-slider-container'),
       volumeSlider: document.getElementById('volume-slider'),
-      sleepToggle: document.getElementById('sleep-toggle'),
-      sleepPanel: document.getElementById('sleep-panel'),
     },
     async init() {
       console.log('Player initializing...');
@@ -105,35 +104,18 @@ document.addEventListener('DOMContentLoaded', () => {
       this.dom.audio.addEventListener('contextmenu', e => e.preventDefault());
       this.dom.audio.onerror = () => { console.error("音频播放错误:", this.dom.audio.error); this.dom.title.textContent = "音频加载失败, 5秒后尝试下一首..."; setTimeout(() => this.playNext(true), 5000); };
       
+      this.dom.volumeIcon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.dom.volumeSliderContainer.classList.toggle('show');
+      });
       this.dom.volumeSlider.addEventListener('input', (e) => {
           this.setVolume(e.target.value);
       });
-
-      // 统一处理弹出面板的点击逻辑
       document.addEventListener('click', (e) => {
-        const isClickInsideVolume = this.dom.volumeIcon.parentElement.contains(e.target);
-        const isClickInsideSleep = this.dom.sleepToggle.parentElement.contains(e.target);
-        
-        if (!isClickInsideVolume) {
-          this.dom.volumeIcon.classList.remove('active');
-        }
-        if (!isClickInsideSleep) {
-          this.dom.sleepToggle.classList.remove('active');
-        }
+          if (!this.dom.volumeSliderContainer.contains(e.target) && !this.dom.volumeIcon.contains(e.target)) {
+              this.dom.volumeSliderContainer.classList.remove('show');
+          }
       });
-
-      this.dom.volumeIcon.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.dom.sleepToggle.classList.remove('active');
-        this.dom.volumeIcon.classList.toggle('active');
-      });
-
-      this.dom.sleepToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.dom.volumeIcon.classList.remove('active');
-        this.dom.sleepToggle.classList.toggle('active');
-      });
-
     },
     setVolume(value) {
         this.dom.audio.volume = value;
@@ -206,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const results = this.state.musicList.filter(song => song.title.toLowerCase().includes(query) || song.tags.some(tag => tag.toLowerCase().includes(query))).slice(0, 5);
       results.forEach(song => {
         const resultItem = document.createElement('div'); resultItem.className = 'search-result-item';
-        resultItem.innerHTML = `${song.title} <span class="song-tags">${song.tags.join(', ')})</span>`;
+        resultItem.innerHTML = `${song.title} <span class="song-tags">${song.tags.join(', ')}</span>`;
         resultItem.addEventListener('click', () => { const songIndex = this.state.musicList.findIndex(item => item.file === song.file); if (songIndex !== -1) this.playSongByIndex(songIndex); this.dom.searchInput.value = ''; this.dom.searchResults.innerHTML = ''; });
         this.dom.searchResults.appendChild(resultItem);
       });
@@ -257,26 +239,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // 事件监听器部分
+  document.getElementById('sleep-toggle').addEventListener('click', () => { 
+      const panel = document.getElementById('sleep-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  });
   document.querySelectorAll('.tag-btn').forEach(btn => { 
       btn.addEventListener('click', () => { 
           document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
       }); 
   });
-
-  const sleepMinutes = document.getElementById('sleep-minutes');
-  if(sleepMinutes) {
-    sleepMinutes.addEventListener('change', () => {
-      const selectedTagBtn = document.querySelector('.tag-btn.selected'); const minutes = parseInt(sleepMinutes.value);
-      if (selectedTagBtn && minutes) { SleepController.start(minutes, selectedTagBtn.dataset.tag); }
-    });
-  }
-
-  const sleepStopBtn = document.getElementById('sleep-stop-btn');
-  if(sleepStopBtn) {
-    sleepStopBtn.addEventListener('click', () => { SleepController.stop(); });
-  }
+  document.getElementById('sleep-minutes').addEventListener('change', () => {
+    const selectedTagBtn = document.querySelector('.tag-btn.selected'); const minutes = parseInt(document.getElementById('sleep-minutes').value);
+    if (selectedTagBtn && minutes) { SleepController.start(minutes, selectedTagBtn.dataset.tag); }
+  });
+  document.getElementById('sleep-stop-btn').addEventListener('click', () => { SleepController.stop(); });
 
   MusicPlayer.init();
 });
