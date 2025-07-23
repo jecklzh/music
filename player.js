@@ -38,9 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const MusicPlayer = {
-    state: { currentIndex: 0, musicList: [], historyStack: [], fadeInterval: null, isPausing: false },
+    // 修改：在 state 中增加 preloadIndex
+    state: { currentIndex: 0, musicList: [], historyStack: [], fadeInterval: null, isPausing: false, preloadIndex: null },
     dom: {
       audio: document.getElementById('audio'),
+      audioPreload: document.getElementById('audio-preload'), // 新增：获取预加载播放器
       title: document.getElementById('song-title'),
       tags: document.getElementById('song-tags'),
       relatedContainer: document.getElementById('related-songs'),
@@ -48,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
       searchInput: document.getElementById('tag-search'),
       prevBtn: document.getElementById('prev-btn'),
       nextBtn: document.getElementById('next-btn'),
-      playPauseBtn: document.getElementById('play-pause-btn'), // 直接从HTML获取
+      playPauseBtn: document.getElementById('play-pause-btn'),
       progressContainer: document.getElementById('progress-container'),
       progressBar: document.getElementById('progress-bar'),
       currentTime: document.getElementById('current-time'),
@@ -72,20 +74,20 @@ document.addEventListener('DOMContentLoaded', () => {
         this.dom.title.textContent = "音乐列表为空";
       }
     },
-    initializeVolume() {
+    initializeVolume() { /* ... 此函数未改变 ... */
       const savedVolume = localStorage.getItem('playerVolume');
       const volume = savedVolume !== null ? parseFloat(savedVolume) : 0.75;
       this.dom.audio.volume = volume;
       this.dom.volumeSlider.value = volume;
       this.updateVolumeIcon(volume);
     },
-    async loadMusicList() {
+    async loadMusicList() { /* ... 此函数未改变 ... */
       try {
         const response = await fetch('list.json'); if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         this.state.musicList = await response.json(); console.log('Music list loaded:', this.state.musicList);
       } catch (error) { console.error('加载音乐列表失败:', error); this.dom.title.textContent = "加载列表失败"; }
     },
-    formatTime(seconds) { const min = Math.floor(seconds / 60); const sec = Math.floor(seconds % 60).toString().padStart(2, '0'); return `${min}:${sec}`; },
+    formatTime(seconds) { /* ... 此函数未改变 ... */ const min = Math.floor(seconds / 60); const sec = Math.floor(seconds % 60).toString().padStart(2, '0'); return `${min}:${sec}`; },
     bindEvents() {
       this.dom.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
       this.dom.nextBtn.addEventListener('click', () => {
@@ -94,7 +96,14 @@ document.addEventListener('DOMContentLoaded', () => {
         this.fadeOut(() => this.playNext());
       });
       this.dom.prevBtn.addEventListener('click', () => this.fadeOut(() => this.playPrevious()));
-      this.dom.audio.addEventListener('play', () => { this.dom.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>'; this.state.isPausing = false; });
+      
+      // 修改：'play'事件现在也负责触发预加载
+      this.dom.audio.addEventListener('play', () => { 
+        this.dom.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>'; 
+        this.state.isPausing = false; 
+        this.preloadNextSong(); // 关键：只要开始播放，就预加载下一首
+      });
+
       this.dom.audio.addEventListener('pause', () => { this.dom.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>'; });
       this.dom.audio.addEventListener('ended', () => { Recommender.recordCompleted(this.state.musicList[this.state.currentIndex].tags); this.playNext(true); });
       this.dom.audio.addEventListener('timeupdate', () => this.updateProgress());
@@ -117,27 +126,63 @@ document.addEventListener('DOMContentLoaded', () => {
           }
       });
     },
-    setVolume(value) {
+    // 新增：预加载核心函数
+    preloadNextSong() {
+        let attempts = 0, maxAttempts = 20;
+        let nextIndex;
+        
+        do {
+            const candidate = Recommender.pick(this.state.musicList);
+            // 确保下一首不是当前正在播放的，并且满足睡眠模式要求
+            if (candidate !== this.state.currentIndex && SleepController.isSongAllowed(this.state.musicList[candidate])) {
+                nextIndex = candidate;
+                break;
+            }
+            attempts++;
+        } while (attempts < maxAttempts);
+
+        if (nextIndex !== null && nextIndex !== undefined) {
+            const songToPreload = this.state.musicList[nextIndex];
+            this.dom.audioPreload.src = `https://music.stevel.eu.org/${encodeURIComponent(songToPreload.file)}`;
+            this.state.preloadIndex = nextIndex;
+            console.log(`Preloading song: ${songToPreload.title} (index: ${nextIndex})`);
+        } else {
+            this.state.preloadIndex = null; // 没有合适的歌曲可以预加载
+            console.log("No suitable song found to preload.");
+        }
+    },
+    setVolume(value) { /* ... 此函数未改变 ... */
         this.dom.audio.volume = value;
         this.updateVolumeIcon(value);
         localStorage.setItem('playerVolume', value);
     },
-    updateVolumeIcon(volume) {
+    updateVolumeIcon(volume) { /* ... 此函数未改变 ... */
         const icon = this.dom.volumeIcon.querySelector('i');
         if (volume == 0) { icon.className = 'fas fa-volume-mute'; } 
         else if (volume < 0.5) { icon.className = 'fas fa-volume-down'; } 
         else { icon.className = 'fas fa-volume-up'; }
     },
-    updateProgress() {
+    updateProgress() { /* ... 此函数未改变 ... */
       const { duration, currentTime } = this.dom.audio;
       if(duration) { this.dom.progressBar.style.width = `${(currentTime / duration) * 100}%`; this.dom.duration.textContent = this.formatTime(duration); this.dom.currentTime.textContent = this.formatTime(currentTime); }
     },
-    seek(e) { const { clientWidth } = this.dom.progressContainer, { offsetX } = e, { duration } = this.dom.audio; if(duration){ this.dom.audio.currentTime = (offsetX / clientWidth) * duration; } },
-    togglePlayPause() { if (this.dom.audio.paused) { this.state.isPausing = false; this.fadeIn(); } else { this.state.isPausing = true; this.fadeOut(); } },
+    seek(e) { /* ... 此函数未改变 ... */ const { clientWidth } = this.dom.progressContainer, { offsetX } = e, { duration } = this.dom.audio; if(duration){ this.dom.audio.currentTime = (offsetX / clientWidth) * duration; } },
+    togglePlayPause() { /* ... 此函数未改变 ... */ if (this.dom.audio.paused) { this.state.isPausing = false; this.fadeIn(); } else { this.state.isPausing = true; this.fadeOut(); } },
     updatePlayer(index, startTime = 0, initialLoad = false) {
       if (!this.state.musicList[index]) return; this.state.currentIndex = index; const song = this.state.musicList[index];
       this.dom.title.textContent = song.title; this.dom.tags.textContent = song.tags.join(', ');
-      this.dom.audio.src = `https://music.stevel.eu.org/${encodeURIComponent(song.file)}`;
+      
+      // 修改：优先使用预加载好的资源
+      if (this.state.preloadIndex === index) {
+          // 如果要播放的歌正是预加载好的那首，直接交换 src
+          this.dom.audio.src = this.dom.audioPreload.src;
+          console.log(`Using preloaded source for: ${song.title}`);
+      } else {
+          // 否则，正常加载（比如手动选歌或播放上一首时）
+          this.dom.audio.src = `https://music.stevel.eu.org/${encodeURIComponent(song.file)}`;
+          console.log(`Loading fresh source for: ${song.title}`);
+      }
+      
       this.dom.audio.onloadedmetadata = () => { this.dom.audio.currentTime = startTime; this.updateProgress(); if (!initialLoad) { this.fadeIn(); } };
       this.renderRelatedSongs(song);
       if ('mediaSession' in navigator) {
@@ -149,30 +194,37 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
     playSongByIndex(index) { this.state.historyStack.push(this.state.currentIndex); this.fadeOut(() => this.updatePlayer(index)); },
+    // 修改：playNext 优先使用预加载的歌曲
     playNext(isAutoPlay = false) {
-      let nextIndex = null, attempts = 0, maxAttempts = 20;
-      do {
-        const candidate = Recommender.pick(this.state.musicList);
-        if (SleepController.isSongAllowed(this.state.musicList[candidate])) { nextIndex = candidate; break; }
-        attempts++;
-      } while (attempts < maxAttempts);
+      let nextIndex = this.state.preloadIndex; // 优先使用预加载的 index
+      
+      if (nextIndex === null) {
+          // 如果没有预加载的（比如预加载失败或不满足条件），则重新计算
+          console.log("No song preloaded, picking a new one.");
+          let attempts = 0, maxAttempts = 20;
+          do {
+            const candidate = Recommender.pick(this.state.musicList);
+            if (SleepController.isSongAllowed(this.state.musicList[candidate])) { nextIndex = candidate; break; }
+            attempts++;
+          } while (attempts < maxAttempts);
+      }
 
       if (nextIndex !== null) {
         this.state.historyStack.push(this.state.currentIndex);
-        if (isAutoPlay) { this.updatePlayer(nextIndex); } 
-        else { this.fadeOut(() => this.updatePlayer(nextIndex)); }
+        // fadeOut 会在 isAutoPlay 为 false 时调用，所以这里统一直接 update
+        this.updatePlayer(nextIndex);
       } else {
         console.log('在睡眠模式下，未找到符合条件的歌曲，暂停播放。');
         this.fadeOut(() => this.dom.audio.pause());
       }
     },
-    stopPlaybackDueToTimer() {
+    stopPlaybackDueToTimer() { /* ... 此函数未改变 ... */
         console.log("Timer expired. Fading out and pausing audio.");
         this.state.isPausing = true;
         this.fadeOut(() => this.dom.audio.pause());
     },
     playPrevious() { if (this.state.historyStack.length > 0) { const prevIndex = this.state.historyStack.pop(); this.updatePlayer(prevIndex); } },
-    renderRelatedSongs(currentSong) {
+    renderRelatedSongs(currentSong) { /* ... 此函数未改变 ... */
       this.dom.relatedContainer.innerHTML = '';
       const related = this.state.musicList.filter(song => song.file !== currentSong.file && song.tags.some(tag => currentSong.tags.includes(tag)))
         .map(song => ({ song, weight: Recommender.computeWeight(song) })).sort((a, b) => b.weight - a.weight).slice(0, 5);
@@ -183,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         this.dom.relatedContainer.appendChild(songElement);
       });
     },
-    handleSearch() {
+    handleSearch() { /* ... 此函数未改变 ... */
       const query = this.dom.searchInput.value.trim().toLowerCase(); this.dom.searchResults.innerHTML = ''; if (!query) return;
       const results = this.state.musicList.filter(song => song.title.toLowerCase().includes(query) || song.tags.some(tag => tag.toLowerCase().includes(query))).slice(0, 5);
       results.forEach(song => {
@@ -193,10 +245,9 @@ document.addEventListener('DOMContentLoaded', () => {
         this.dom.searchResults.appendChild(resultItem);
       });
     },
-    savePlaybackPosition() { if (!isNaN(this.dom.audio.currentTime) && this.dom.audio.currentTime > 0) { localStorage.setItem('lastSongIndex', this.state.currentIndex); localStorage.setItem('lastSongTime', this.dom.audio.currentTime); } },
-    fadeOut(callback) {
+    savePlaybackPosition() { /* ... 此函数未改变 ... */ if (!isNaN(this.dom.audio.currentTime) && this.dom.audio.currentTime > 0) { localStorage.setItem('lastSongIndex', this.state.currentIndex); localStorage.setItem('lastSongTime', this.dom.audio.currentTime); } },
+    fadeOut(callback) { /* ... 此函数未改变 ... */
       const initialVolume = this.dom.audio.volume;
-      //if (initialVolume === 0) { if (this.state.isPausing) this.dom.audio.pause(); if (callback) callback(); return; }
       if (initialVolume === 0) { setTimeout(() => { if (this.state.isPausing) this.dom.audio.pause(); if (callback) callback(); }, 450); return; }
       clearInterval(this.state.fadeInterval); const step = initialVolume / 10, interval = 25, audio = this.dom.audio;
       this.state.fadeInterval = setInterval(() => {
@@ -204,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else { audio.volume = 0; clearInterval(this.state.fadeInterval); if (this.state.isPausing) { audio.pause(); } if (callback) callback(); }
       }, interval);
     },
-    fadeIn() {
+    fadeIn() { /* ... 此函数未改变 ... */
       const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
       this.dom.audio.volume = 0;
       clearInterval(this.state.fadeInterval); const step = targetVolume > 0 ? targetVolume / 10 : 0.1, interval = 25, audio = this.dom.audio;
@@ -217,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // SleepController 和它的事件绑定部分未改变
   const SleepController = {
     endTime: null, tagFilter: [], intervalId: null,
     isActive() { return this.endTime !== null; },
