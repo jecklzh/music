@@ -247,18 +247,35 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     savePlaybackPosition() { /* ... 此函数未改变 ... */ if (!isNaN(this.dom.audio.currentTime) && this.dom.audio.currentTime > 0) { localStorage.setItem('lastSongIndex', this.state.currentIndex); localStorage.setItem('lastSongTime', this.dom.audio.currentTime); } },
     fadeOut(callback) {
-      // 直接将音量设置为0，CSS会处理平滑过渡的动画
-      this.dom.audio.volume = 0;
+      const audio = this.dom.audio;
 
-      // 在动画结束（300ms）后执行后续操作
-      setTimeout(() => {
+      // 如果音量已经是0，直接执行回调，避免等待
+      if (audio.volume === 0) {
         if (this.state.isPausing) {
-          this.dom.audio.pause();
+          audio.pause();
         }
         if (callback) {
           callback();
         }
-      }, 300); // 这个时间必须和CSS中的transition-duration一致
+        return;
+      }
+      
+      // 定义动画结束时要执行的操作
+      const onTransitionEnd = () => {
+        if (this.state.isPausing) {
+          audio.pause();
+        }
+        if (callback) {
+          callback();
+        }
+      };
+
+      // 关键：监听 transitionend 事件，并设置 { once: true } 确保它只触发一次
+      // 这样可以保证在音量动画确实完成后，才执行换歌等后续逻辑
+      audio.addEventListener('transitionend', onTransitionEnd, { once: true });
+
+      // 触发动画
+      audio.volume = 0;
     },
     fadeIn() {
       const audio = this.dom.audio;
