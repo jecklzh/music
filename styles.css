@@ -54,7 +54,8 @@ main {
 .song-tags { color: #888; font-size: 0.9em; margin: 0.25em 0 1.5em 0; text-align: center; }
 
 /* 音频控件 (隐藏原生) */
-audio { display: none; }
+audio { display: none; transition: volume 0.3s ease-in-out; }
+
 
 /* 基础按钮样式 (用于睡眠面板等) */
 button {
