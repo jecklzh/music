@@ -246,25 +246,32 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     },
     savePlaybackPosition() { /* ... 此函数未改变 ... */ if (!isNaN(this.dom.audio.currentTime) && this.dom.audio.currentTime > 0) { localStorage.setItem('lastSongIndex', this.state.currentIndex); localStorage.setItem('lastSongTime', this.dom.audio.currentTime); } },
-    fadeOut(callback) { /* ... 此函数未改变 ... */
-      const initialVolume = this.dom.audio.volume;
-      if (initialVolume === 0) { setTimeout(() => { if (this.state.isPausing) this.dom.audio.pause(); if (callback) callback(); }, 450); return; }
-      clearInterval(this.state.fadeInterval); const step = initialVolume / 10, interval = 25, audio = this.dom.audio;
-      this.state.fadeInterval = setInterval(() => {
-        if (audio.volume > step) { audio.volume = Math.max(0, audio.volume - step); } 
-        else { audio.volume = 0; clearInterval(this.state.fadeInterval); if (this.state.isPausing) { audio.pause(); } if (callback) callback(); }
-      }, interval);
-    },
-    fadeIn() { /* ... 此函数未改变 ... */
-      const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
+    fadeOut(callback) {
+      // 直接将音量设置为0，CSS会处理平滑过渡的动画
       this.dom.audio.volume = 0;
-      clearInterval(this.state.fadeInterval); const step = targetVolume > 0 ? targetVolume / 10 : 0.1, interval = 25, audio = this.dom.audio;
-      if(audio.paused) { audio.play().catch(e => console.warn('自动播放可能被浏览器阻止:', e)); }
-      if (audio.volume >= targetVolume) return;
-      this.state.fadeInterval = setInterval(() => {
-        if (audio.volume < targetVolume - step) { audio.volume = Math.min(targetVolume, audio.volume + step); } 
-        else { audio.volume = targetVolume; clearInterval(this.state.fadeInterval); }
-      }, interval);
+
+      // 在动画结束（300ms）后执行后续操作
+      setTimeout(() => {
+        if (this.state.isPausing) {
+          this.dom.audio.pause();
+        }
+        if (callback) {
+          callback();
+        }
+      }, 300); // 这个时间必须和CSS中的transition-duration一致
+    },
+    fadeIn() {
+      const audio = this.dom.audio;
+      const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
+
+      // 确保在音量改变前开始播放
+      if (audio.paused) {
+        audio.play().catch(e => console.warn('自动播放可能被浏览器阻止:', e));
+      }
+
+      // 立即将音量设置为目标值，CSS会处理从0到目标值的平滑动画
+      // (这里不需要延时，因为播放命令是异步的，音量设置会立即生效并开始过渡)
+      audio.volume = targetVolume;
     }
   };
 
