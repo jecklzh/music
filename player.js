@@ -169,13 +169,23 @@ document.addEventListener('DOMContentLoaded', () => {
     seek(e) { /* ... 此函数未改变 ... */ const { clientWidth } = this.dom.progressContainer, { offsetX } = e, { duration } = this.dom.audio; if(duration){ this.dom.audio.currentTime = (offsetX / clientWidth) * duration; } },
     togglePlayPause() { /* ... 此函数未改变 ... */ if (this.dom.audio.paused) { this.state.isPausing = false; this.fadeIn(); } else { this.state.isPausing = true; this.fadeOut(); } },
     updatePlayer(index, startTime = 0, initialLoad = false) {
-      if (!this.state.musicList[index]) return; this.state.currentIndex = index; const song = this.state.musicList[index];
-      this.dom.title.textContent = song.title; this.dom.tags.textContent = song.tags.join(', ');
-      
-      this.dom.audio.src = `https://music.stevel.eu.org/${encodeURIComponent(song.file)}?v=${Date.now()}`;
-      console.log(`Loading song: ${song.title}`);
-      
-      this.dom.audio.onloadedmetadata = () => { this.dom.audio.currentTime = startTime; this.updateProgress(); if (!initialLoad) { this.fadeIn(); } };
+      if (!this.state.musicList[index]) return;
+      this.state.currentIndex = index;
+
+      const song = this.state.musicList[index];
+      this.dom.title.textContent = song.title;
+      this.dom.tags.textContent = song.tags.join(', ');
+
+      const src = `https://music.stevel.eu.org/${encodeURIComponent(song.file)}?v=${Date.now()}`;
+      this.dom.audio.src = src;
+
+      this.dom.audio.onloadedmetadata = () => {
+        this.dom.audio.currentTime = startTime;
+        this.updateProgress();
+        if (!initialLoad) {
+          this.fadeIn(); // ✅ 注意：只在 metadata 加载完成后淡入
+        }
+      };
       this.renderRelatedSongs(song);
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({ title: song.title });
@@ -247,24 +257,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      audio.volume = 0;
-
-      // 用定时器代替 transitionend，确保过渡后执行
+      audio.volume = 0; // 使用 CSS 控制淡出
       setTimeout(() => {
         if (this.state.isPausing) audio.pause();
         if (callback) callback();
-      }, 330); // 与 CSS 中 transition: 0.3s 配合
+      }, 330); // 与 CSS transition 对应时间一致
     },
     fadeIn() {
       const audio = this.dom.audio;
       const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
+
       audio.volume = 0;
+
       if (audio.paused) {
-        audio.play().catch(e => console.warn('🎧 自动播放失败:', e));
+        audio.play().catch(e => console.warn('🎧 自动播放被限制:', e));
       }
+
       setTimeout(() => {
-        audio.volume = targetVolume;
-      }, 30); // 触发 CSS 过渡
+        audio.volume = targetVolume; // 使用 CSS 平滑过渡音量
+      }, 30);
     };
 
   // SleepController 和它的事件绑定部分未改变
