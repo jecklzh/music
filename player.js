@@ -267,12 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const audio = this.dom.audio;
       const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
 
-      // 如果 metadata 未加载，不进行播放（避免音频未准备好）
-      if (isNaN(audio.duration)) {
-        console.warn("⏸️ fadeIn 取消：音频未加载完 metadata");
-        return;
-      }
-
       audio.volume = 0;
 
       if (audio.paused) {
@@ -281,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       setTimeout(() => {
         audio.volume = targetVolume;
-      }, 30); // 触发 CSS 动画过渡
+      }, 30);
     };
 
   // SleepController 和它的事件绑定部分未改变
