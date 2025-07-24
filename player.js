@@ -138,6 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (nextIndex !== null && nextIndex !== undefined) {
             const songToPreload = this.state.musicList[nextIndex];
             this.dom.audioPreload.src = `https://music.stevel.eu.org/${encodeURIComponent(songToPreload.file)}`;
+            // 新增：给浏览器一个更强的加载信号，让它更积极地预加载
+            this.dom.audioPreload.load(); 
             this.state.preloadIndex = nextIndex;
             console.log(`Preloading song: ${songToPreload.title} (index: ${nextIndex})`);
         } else {
@@ -167,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.fadeIn(); 
         } else { 
             this.state.isPausing = true; 
-            // 修复：fadeOut的回调现在只负责暂停，确保逻辑清晰
+            // 优化：fadeOut的回调现在只负责暂停，逻辑更清晰
             this.fadeOut(() => {
                 this.dom.audio.pause();
             }); 
@@ -220,13 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (nextIndex !== null) {
         this.state.historyStack.push(this.state.currentIndex);
-        // 对于自动播放，直接更新；对于手动切歌，fadeOut已经处理了
-        if (isAutoPlay) {
-          this.updatePlayer(nextIndex);
-        } else {
-          // fadeOut的回调会调用这个playNext，但那时我们已经淡出，所以直接更新
-          this.updatePlayer(nextIndex);
-        }
+        this.updatePlayer(nextIndex);
       } else {
         console.log('在睡眠模式下，未找到符合条件的歌曲，暂停播放。');
         this.fadeOut(() => this.dom.audio.pause());
@@ -261,9 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     savePlaybackPosition() { if (!isNaN(this.dom.audio.currentTime) && this.dom.audio.currentTime > 0) { localStorage.setItem('lastSongIndex', this.state.currentIndex); localStorage.setItem('lastSongTime', this.dom.audio.currentTime); } },
     
-    // 最终修复版：使用 setInterval 的纯JS动画，兼容性最强
     fadeOut(callback) {
-      clearInterval(this.state.fadeInterval); // 清除可能存在的旧计时器
+      clearInterval(this.state.fadeInterval);
 
       const audio = this.dom.audio;
       const initialVolume = audio.volume;
@@ -273,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      const fadeDuration = 300; // ms
+      const fadeDuration = 300;
       const fadeSteps = 20;
       const stepTime = fadeDuration / fadeSteps;
       const volumeStep = initialVolume / fadeSteps;
@@ -282,23 +277,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const newVolume = audio.volume - volumeStep;
         if (newVolume <= 0) {
           audio.volume = 0;
-          clearInterval(this.state.fadeInterval); // 动画结束，清除计时器
-          if (callback) callback(); // 可靠地执行回调
+          clearInterval(this.state.fadeInterval);
+          if (callback) callback();
         } else {
           audio.volume = newVolume;
         }
       }, stepTime);
     },
 
-    // 最终修复版：使用 setInterval 的纯JS动画
     fadeIn() {
-      clearInterval(this.state.fadeInterval); // 清除可能存在的旧计时器
+      clearInterval(this.state.fadeInterval);
 
       const audio = this.dom.audio;
       const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
 
       if (audio.paused) {
-        // 先将音量设为0再播放，避免突然有声音
         audio.volume = 0;
         audio.play().catch(e => console.warn('自动播放被浏览器阻止:', e));
       }
@@ -306,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const initialVolume = audio.volume;
       if (initialVolume >= targetVolume) return;
 
-      const fadeDuration = 300; // ms
+      const fadeDuration = 300;
       const fadeSteps = 20;
       const stepTime = fadeDuration / fadeSteps;
       const volumeStep = (targetVolume - initialVolume) / fadeSteps;
@@ -315,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newVolume = audio.volume + volumeStep;
         if (newVolume >= targetVolume) {
           audio.volume = targetVolume;
-          clearInterval(this.state.fadeInterval); // 动画结束，清除计时器
+          clearInterval(this.state.fadeInterval);
         } else {
           audio.volume = newVolume;
         }
