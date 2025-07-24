@@ -95,11 +95,20 @@ document.addEventListener('DOMContentLoaded', () => {
         this.fadeOut(() => this.playNext());
       });
       this.dom.prevBtn.addEventListener('click', () => this.fadeOut(() => this.playPrevious()));
+      
+      // ==========================================================
+      // 核心修复：只在歌曲刚开始播放时才预加载下一首
+      // ==========================================================
       this.dom.audio.addEventListener('play', () => { 
         this.dom.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>'; 
         this.state.isPausing = false; 
-        this.preloadNextSong();
+        
+        // 判断：只有当歌曲播放时间小于2秒（即新歌开始），才执行预加载
+        if (this.dom.audio.currentTime < 2) {
+            this.preloadNextSong();
+        }
       });
+
       this.dom.audio.addEventListener('pause', () => { this.dom.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>'; });
       this.dom.audio.addEventListener('ended', () => { Recommender.recordCompleted(this.state.musicList[this.state.currentIndex].tags); this.playNext(true); });
       this.dom.audio.addEventListener('timeupdate', () => this.updateProgress());
@@ -138,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (nextIndex !== null && nextIndex !== undefined) {
             const songToPreload = this.state.musicList[nextIndex];
             this.dom.audioPreload.src = `https://music.stevel.eu.org/${encodeURIComponent(songToPreload.file)}`;
-            // 新增：给浏览器一个更强的加载信号，让它更积极地预加载
             this.dom.audioPreload.load(); 
             this.state.preloadIndex = nextIndex;
             console.log(`Preloading song: ${songToPreload.title} (index: ${nextIndex})`);
@@ -169,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.fadeIn(); 
         } else { 
             this.state.isPausing = true; 
-            // 优化：fadeOut的回调现在只负责暂停，逻辑更清晰
             this.fadeOut(() => {
                 this.dom.audio.pause();
             }); 
