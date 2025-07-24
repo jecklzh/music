@@ -172,16 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!this.state.musicList[index]) return; this.state.currentIndex = index; const song = this.state.musicList[index];
       this.dom.title.textContent = song.title; this.dom.tags.textContent = song.tags.join(', ');
       
-      // 修改：优先使用预加载好的资源
-      if (this.state.preloadIndex === index) {
-          // 如果要播放的歌正是预加载好的那首，直接交换 src
-          this.dom.audio.src = this.dom.audioPreload.src;
-          console.log(`Using preloaded source for: ${song.title}`);
-      } else {
-          // 否则，正常加载（比如手动选歌或播放上一首时）
-          this.dom.audio.src = `https://music.stevel.eu.org/${encodeURIComponent(song.file)}`;
-          console.log(`Loading fresh source for: ${song.title}`);
-      }
+      this.dom.audio.src = `https://music.stevel.eu.org/${encodeURIComponent(song.file)}?v=${Date.now()}`;
+      console.log(`Loading song: ${song.title}`);
       
       this.dom.audio.onloadedmetadata = () => { this.dom.audio.currentTime = startTime; this.updateProgress(); if (!initialLoad) { this.fadeIn(); } };
       this.renderRelatedSongs(song);
@@ -266,16 +258,13 @@ document.addEventListener('DOMContentLoaded', () => {
     fadeIn() {
       const audio = this.dom.audio;
       const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
-
       audio.volume = 0;
-
       if (audio.paused) {
-        audio.play().catch(e => console.warn('🎧 自动播放被限制:', e));
+        audio.play().catch(e => console.warn('🎧 自动播放失败:', e));
       }
-
       setTimeout(() => {
         audio.volume = targetVolume;
-      }, 30);
+      }, 30); // 触发 CSS 过渡
     };
 
   // SleepController 和它的事件绑定部分未改变
