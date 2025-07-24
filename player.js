@@ -257,26 +257,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
       audio.volume = 0;
 
-      // 用定时器代替 transitionend（CSS中是300ms）
+      // 用定时器代替 transitionend，确保过渡后执行
       setTimeout(() => {
         if (this.state.isPausing) audio.pause();
         if (callback) callback();
-      }, 330); // 稍微多一点，确保动画完成
+      }, 330); // 与 CSS 中 transition: 0.3s 配合
     },
     fadeIn() {
       const audio = this.dom.audio;
       const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
 
+      // 如果 metadata 未加载，不进行播放（避免音频未准备好）
+      if (isNaN(audio.duration)) {
+        console.warn("⏸️ fadeIn 取消：音频未加载完 metadata");
+        return;
+      }
+
       audio.volume = 0;
 
       if (audio.paused) {
-        audio.play().catch(e => console.warn('自动播放可能被浏览器阻止:', e));
+        audio.play().catch(e => console.warn('🎧 自动播放被限制:', e));
       }
 
-      // 等一帧再设置目标音量，触发过渡
       setTimeout(() => {
         audio.volume = targetVolume;
-      }, 30);
+      }, 30); // 触发 CSS 动画过渡
     };
 
   // SleepController 和它的事件绑定部分未改变
