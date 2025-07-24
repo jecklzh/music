@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const MusicPlayer = {
-    state: { currentIndex: 0, musicList: [], historyStack: [], isPausing: false, preloadIndex: null },
+    state: { currentIndex: 0, musicList: [], historyStack: [], fadeInterval: null, isPausing: false, preloadIndex: null },
     dom: {
       audio: document.getElementById('audio'),
       audioPreload: document.getElementById('audio-preload'),
@@ -161,7 +161,18 @@ document.addEventListener('DOMContentLoaded', () => {
       if(duration) { this.dom.progressBar.style.width = `${(currentTime / duration) * 100}%`; this.dom.duration.textContent = this.formatTime(duration); this.dom.currentTime.textContent = this.formatTime(currentTime); }
     },
     seek(e) { const { clientWidth } = this.dom.progressContainer, { offsetX } = e, { duration } = this.dom.audio; if(duration){ this.dom.audio.currentTime = (offsetX / clientWidth) * duration; } },
-    togglePlayPause() { if (this.dom.audio.paused) { this.state.isPausing = false; this.fadeIn(); } else { this.state.isPausing = true; this.fadeOut(() => this.dom.audio.pause()); } },
+    togglePlayPause() { 
+        if (this.dom.audio.paused) { 
+            this.state.isPausing = false; 
+            this.fadeIn(); 
+        } else { 
+            this.state.isPausing = true; 
+            // 修复：fadeOut的回调现在只负责暂停，确保逻辑清晰
+            this.fadeOut(() => {
+                this.dom.audio.pause();
+            }); 
+        } 
+    },
     updatePlayer(index, startTime = 0, initialLoad = false) {
       if (!this.state.musicList[index]) return; 
       this.state.currentIndex = index; 
@@ -169,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
       this.dom.title.textContent = song.title; 
       this.dom.tags.textContent = song.tags.join(', ');
       
-      // 修复：恢复预加载逻辑，确保加载稳定和快速
       if (this.state.preloadIndex === index && this.dom.audioPreload.src) {
           this.dom.audio.src = this.dom.audioPreload.src;
           console.log(`Using preloaded source for: ${song.title}`);
@@ -210,7 +220,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (nextIndex !== null) {
         this.state.historyStack.push(this.state.currentIndex);
-        this.updatePlayer(nextIndex);
+        // 对于自动播放，直接更新；对于手动切歌，fadeOut已经处理了
+        if (isAutoPlay) {
+          this.updatePlayer(nextIndex);
+        } else {
+          // fadeOut的回调会调用这个playNext，但那时我们已经淡出，所以直接更新
+          this.updatePlayer(nextIndex);
+        }
       } else {
         console.log('在睡眠模式下，未找到符合条件的歌曲，暂停播放。');
         this.fadeOut(() => this.dom.audio.pause());
@@ -245,33 +261,65 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     savePlaybackPosition() { if (!isNaN(this.dom.audio.currentTime) && this.dom.audio.currentTime > 0) { localStorage.setItem('lastSongIndex', this.state.currentIndex); localStorage.setItem('lastSongTime', this.dom.audio.currentTime); } },
     
-    // 修复：使用最稳定可靠的 transitionend 事件来处理淡出
+    // 最终修复版：使用 setInterval 的纯JS动画，兼容性最强
     fadeOut(callback) {
+      clearInterval(this.state.fadeInterval); // 清除可能存在的旧计时器
+
       const audio = this.dom.audio;
-      if (audio.volume === 0) {
+      const initialVolume = audio.volume;
+
+      if (initialVolume === 0) {
         if (callback) callback();
         return;
       }
       
-      const onTransitionEnd = () => {
-        if (callback) {
-          callback();
+      const fadeDuration = 300; // ms
+      const fadeSteps = 20;
+      const stepTime = fadeDuration / fadeSteps;
+      const volumeStep = initialVolume / fadeSteps;
+
+      this.state.fadeInterval = setInterval(() => {
+        const newVolume = audio.volume - volumeStep;
+        if (newVolume <= 0) {
+          audio.volume = 0;
+          clearInterval(this.state.fadeInterval); // 动画结束，清除计时器
+          if (callback) callback(); // 可靠地执行回调
+        } else {
+          audio.volume = newVolume;
         }
-      };
-      
-      audio.addEventListener('transitionend', onTransitionEnd, { once: true });
-      audio.volume = 0;
+      }, stepTime);
     },
 
-    // 修复：使用最简洁高效的方式处理淡入
+    // 最终修复版：使用 setInterval 的纯JS动画
     fadeIn() {
+      clearInterval(this.state.fadeInterval); // 清除可能存在的旧计时器
+
       const audio = this.dom.audio;
       const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
+
       if (audio.paused) {
+        // 先将音量设为0再播放，避免突然有声音
+        audio.volume = 0;
         audio.play().catch(e => console.warn('自动播放被浏览器阻止:', e));
       }
-      // CSS会处理从当前音量（应为0）到目标音量的平滑过渡
-      audio.volume = targetVolume;
+
+      const initialVolume = audio.volume;
+      if (initialVolume >= targetVolume) return;
+
+      const fadeDuration = 300; // ms
+      const fadeSteps = 20;
+      const stepTime = fadeDuration / fadeSteps;
+      const volumeStep = (targetVolume - initialVolume) / fadeSteps;
+
+      this.state.fadeInterval = setInterval(() => {
+        const newVolume = audio.volume + volumeStep;
+        if (newVolume >= targetVolume) {
+          audio.volume = targetVolume;
+          clearInterval(this.state.fadeInterval); // 动画结束，清除计时器
+        } else {
+          audio.volume = newVolume;
+        }
+      }, stepTime);
     }
   };
 
