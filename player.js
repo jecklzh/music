@@ -249,48 +249,35 @@ document.addEventListener('DOMContentLoaded', () => {
     fadeOut(callback) {
       const audio = this.dom.audio;
 
-      // 如果音量已经是0，直接执行回调，避免等待
       if (audio.volume === 0) {
-        if (this.state.isPausing) {
-          audio.pause();
-        }
-        if (callback) {
-          callback();
-        }
+        if (this.state.isPausing) audio.pause();
+        if (callback) callback();
         return;
       }
-      
-      // 定义动画结束时要执行的操作
-      const onTransitionEnd = () => {
-        if (this.state.isPausing) {
-          audio.pause();
-        }
-        if (callback) {
-          callback();
-        }
-      };
 
-      // 关键：监听 transitionend 事件，并设置 { once: true } 确保它只触发一次
-      // 这样可以保证在音量动画确实完成后，才执行换歌等后续逻辑
-      audio.addEventListener('transitionend', onTransitionEnd, { once: true });
-
-      // 触发动画
       audio.volume = 0;
+
+      // 用定时器代替 transitionend（CSS中是300ms）
+      setTimeout(() => {
+        if (this.state.isPausing) audio.pause();
+        if (callback) callback();
+      }, 330); // 稍微多一点，确保动画完成
     },
     fadeIn() {
       const audio = this.dom.audio;
       const targetVolume = parseFloat(localStorage.getItem('playerVolume') || '0.75');
 
-      // 确保在音量改变前开始播放
+      audio.volume = 0;
+
       if (audio.paused) {
         audio.play().catch(e => console.warn('自动播放可能被浏览器阻止:', e));
       }
 
-      // 立即将音量设置为目标值，CSS会处理从0到目标值的平滑动画
-      // (这里不需要延时，因为播放命令是异步的，音量设置会立即生效并开始过渡)
-      audio.volume = targetVolume;
-    }
-  };
+      // 等一帧再设置目标音量，触发过渡
+      setTimeout(() => {
+        audio.volume = targetVolume;
+      }, 30);
+    };
 
   // SleepController 和它的事件绑定部分未改变
   const SleepController = {
