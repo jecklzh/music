@@ -64,15 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
       await this.loadMusicList();
       this.bindEvents();
       this.initializeVolume();
-      // 在初始化时，检查本地存储中是否有上次的播放记录
       const lastIndex = localStorage.getItem('lastSongIndex');
       const lastTime = parseFloat(localStorage.getItem('lastSongTime') || 0);
 
       if (lastIndex !== null && this.state.musicList[lastIndex]) {
-        // 如果有，则加载这首歌并设置好时间和UI，但不立即播放
         this.updatePlayer(parseInt(lastIndex, 10), lastTime, true);
       } else if (this.state.musicList.length > 0) {
-        // 如果没有，则随机播放一首新歌
         this.updatePlayer(Recommender.pick(this.state.musicList), 0, true);
       } else {
         this.dom.title.textContent = "音乐列表为空";
@@ -132,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
       });
 
-      // 新增：监听用户离开页面的事件，用以保存播放进度
       window.addEventListener('beforeunload', () => this.savePlaybackPosition());
     },
     preloadNextSong() {
@@ -267,10 +263,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     },
 
-    // 新增：保存播放进度的函数
+    // ==========================================================
+    // 核心修复：放宽保存条件
+    // ==========================================================
     savePlaybackPosition() {
-      // 只有在音频正在播放（未暂停且时间大于0）时才保存
-      if (!this.dom.audio.paused && this.dom.audio.currentTime > 0) {
+      // 修复：移除 !this.dom.audio.paused 的判断，
+      // 无论当前是播放还是暂停，只要进度大于0，就应该保存。
+      if (this.dom.audio.currentTime > 0) {
         localStorage.setItem('lastSongIndex', this.state.currentIndex);
         localStorage.setItem('lastSongTime', this.dom.audio.currentTime);
         console.log(`Playback position saved: Song index ${this.state.currentIndex} at ${this.dom.audio.currentTime}s`);
