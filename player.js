@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     initializeVolume() {
       const savedVolume = localStorage.getItem('playerVolume');
-      const volume = savedVolume !== null ? parseFloat(savedVolume) : 0.75;
+      const volume = savedVolume !== null ? parseFloat(savedVolume) : 1.00;
       this.dom.audio.volume = volume;
       this.dom.volumeSlider.value = volume;
       this.updateVolumeIcon(volume);
