@@ -17,7 +17,8 @@ header {
   border-radius: 12px;
   margin: 0 auto 1rem auto;
   max-width: 800px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  /* 优化：采用更柔和、有层次感的阴影 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(90, 149, 245, 0.1);
   border: 1px solid #e8e8e8;
 }
 
@@ -29,7 +30,8 @@ h1 {
   margin: 0;
 }
 
-.music-icon { font-size: 2.2rem; color: #007acc; }
+/* 优化：更新主色调为柔和的天空蓝 */
+.music-icon { font-size: 2.2rem; color: #5a95f5; }
 .title-text { font-size: 1.8rem; font-weight: 600; }
 
 /* 主内容区 */
@@ -44,10 +46,18 @@ main {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  /* 优化：采用更柔和、有层次感的阴影，并加入过渡动画 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(90, 149, 245, 0.1);
   border: 1px solid #e8e8e8;
   margin-bottom: 1rem;
+  transition: all 0.3s ease-out;
 }
+.card:hover {
+  /* 优化：鼠标悬停时，阴影变深，卡片微微上浮，增加立体感 */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.06), 0 16px 40px rgba(90, 149, 245, 0.15);
+}
+
 
 /* 歌曲信息 */
 #song-title { font-size: 1.5rem; margin: 0 0 0.25rem 0; font-weight: 600; text-align: center; }
@@ -72,7 +82,6 @@ button:hover { background: #f0f0f0; }
 
 /* 相关歌曲区域 */
 .related { margin-top: 1.5rem; }
-/* 新增：相关推荐头部的 Flex 布局 */
 .related-header {
   display: flex;
   justify-content: space-between;
@@ -80,19 +89,25 @@ button:hover { background: #f0f0f0; }
   margin-bottom: 0.5rem;
 }
 .related-header h3 { margin: 0; font-size: 1rem; font-weight: 600; }
-.related-song { padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: background 0.2s; }
-.related-song:hover { background: #f5f5f5; }
+.related-song { padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: background 0.2s, color 0.2s; }
+/* 优化：使用新的辅助色作为悬停背景，主色调作为文字颜色 */
+.related-song:hover { 
+  background: #f5f8ff; 
+  color: #5a95f5;
+}
 .related-song .song-tags { display: inline; margin-left: 0.5em; color: #888; font-size: 0.9em; }
+.related-song:hover .song-tags { color: #5a95f5; }
+
 
 /* 搜索框样式 */
 .search-box input { width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
 .search-results { margin-top: 0.5rem; }
 .search-result-item { padding: 0.75rem; border-radius: 6px; margin-bottom: 0.25rem; cursor: pointer; transition: background 0.2s; }
-.search-result-item:hover { background: #f5f5f5; }
+.search-result-item:hover { background: #f5f8ff; color: #5a95f5; }
 .search-result-item .song-tags { display: inline; margin-left: 0.5em; color: #888; font-size: 0.9em; }
+.search-result-item:hover .song-tags { color: #5a95f5; }
 
 /* 控制区美学升级 */
-/* 更新：简化 controls 样式，使其直接居中内容 */
 .controls { display: flex; justify-content: center; align-items: center; margin-top: 1rem; }
 .main-controls { display: flex; justify-content: center; align-items: center; gap: 1.5rem; }
 
@@ -106,34 +121,46 @@ button:hover { background: #f0f0f0; }
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  /* 优化：为所有变化增加Q弹的过渡动画，实现“呼吸感” */
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.control-btn:hover { background-color: #f5f5f5; border-color: #ccc; }
+.control-btn:hover { 
+  background-color: #f5f5f5; 
+  border-color: #ccc;
+  /* 优化：增加上浮和放大效果 */
+  transform: scale(1.08) translateY(-2px);
+}
 
 .play-btn {
   font-size: 1.5rem;
   width: 64px;
   height: 64px;
-  background-color: #007acc;
+  /* 优化：更新主色调 */
+  background-color: #5a95f5;
   color: white;
   border: none;
-  box-shadow: 0 4px 10px rgba(0, 122, 204, 0.3);
+  /* 优化：阴影也使用主色调的颜色，更和谐 */
+  box-shadow: 0 4px 12px rgba(90, 149, 245, 0.4);
 }
-/* 修复播放图标不居中的问题 */
 .play-btn .fa-play { padding-left: 4px; }
-.play-btn:hover { background-color: #005f9e; }
+.play-btn:hover { 
+    background-color: #4a80f0; /* 悬停时颜色加深 */
+    box-shadow: 0 6px 16px rgba(90, 149, 245, 0.5);
+}
 
 /* 自定义进度条和时间显示样式 */
 .progress-container { background: #e9ecef; border-radius: 5px; cursor: pointer; margin: 1rem 0 0.5rem 0; height: 8px; width: 100%; }
-.progress-bar { background: #007acc; border-radius: 5px; height: 100%; width: 0%; transition: width 0.1s linear; }
+/* 优化：进度条也使用新的主色调 */
+.progress-bar { background: #5a95f5; border-radius: 5px; height: 100%; width: 0%; transition: width 0.1s linear; }
 .time-display { font-size: 0.85rem; color: #666; text-align: right; margin-bottom: 0.5rem; }
+
+/* ... 后面的代码保持不变 ... */
 
 /* 睡眠控制面板 */
 #sleep-control-card { padding: 1rem 1.5rem; }
-/* 新增：睡眠卡片头部的 Flex 布局 */
 .sleep-card-header {
   display: flex;
   justify-content: space-between;
@@ -153,15 +180,14 @@ button:hover { background: #f0f0f0; }
 .tag-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
 .tag-buttons .tag-btn, #sleep-stop-btn { padding: 0.4rem 0.8rem; border: 1px solid #ccc; background: #fff; color: #333; }
 .tag-buttons .tag-btn:hover, #sleep-stop-btn:hover { background: #f5f5f5; border-color: #bbb; }
-.tag-buttons .tag-btn.selected { background: #007acc; color: white; border-color: #007acc; }
+/* 优化：选中的标签按钮也使用新的主色调 */
+.tag-buttons .tag-btn.selected { background: #5a95f5; color: white; border-color: #5a95f5; }
 
 /* 音量控制样式 */
-/* 使音量控制在新的位置也能正常工作 */
 .volume-control { position: relative; }
 .volume-slider-container {
   position: absolute;
   bottom: 150%;
-  /* 调整位置以适应右侧对齐 */
   right: -10px; 
   left: auto;
   transform: translateX(0); 
