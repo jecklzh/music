@@ -77,23 +77,59 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
     
-    // 新增：处理欢迎弹窗的逻辑
+    // ==========================================================
+    // 核心修改：实现“随机周期提醒”的弹窗逻辑
+    // ==========================================================
     handleWelcomeModal() {
         const overlay = document.getElementById('welcome-overlay');
         const agreeBtn = document.getElementById('welcome-agree-btn');
+        const welcomeInfoKey = 'welcomeInfo';
 
-        // 检查用户是否已经同意过
-        if (localStorage.getItem('welcomeAgreed')) {
-            overlay.classList.add('hidden');
-        } else {
-            overlay.classList.remove('hidden');
+        const showModal = () => overlay.classList.remove('hidden');
+        const hideModal = () => overlay.classList.add('hidden');
+
+        const agreeAndSetTimer = () => {
+            // 生成一个5到9天之间的随机天数
+            const minDays = 5, maxDays = 9;
+            const randomDays = Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays;
+            
+            // 将随机天数转换为毫秒
+            const intervalMs = randomDays * 24 * 60 * 60 * 1000;
+            const timestampMs = Date.now();
+
+            const info = {
+                timestamp: timestampMs,
+                interval: intervalMs
+            };
+
+            // 将信息存入localStorage
+            localStorage.setItem(welcomeInfoKey, JSON.stringify(info));
+            console.log(`Welcome agreed. Next reminder in ${randomDays} days.`);
+            hideModal();
+        };
+
+        agreeBtn.addEventListener('click', agreeAndSetTimer);
+
+        try {
+            const storedInfo = JSON.parse(localStorage.getItem(welcomeInfoKey));
+
+            if (!storedInfo || !storedInfo.timestamp || !storedInfo.interval) {
+                // 首次访问，或数据不合法
+                showModal();
+            } else {
+                const elapsedTime = Date.now() - storedInfo.timestamp;
+                if (elapsedTime > storedInfo.interval) {
+                    // 时间已超过设定的随机周期，再次显示
+                    showModal();
+                } else {
+                    // 时间未到，保持隐藏
+                    hideModal();
+                }
+            }
+        } catch (e) {
+            // 解析失败，视为首次访问
+            showModal();
         }
-
-        agreeBtn.addEventListener('click', () => {
-            // 写入记录，这样下次就不会再弹出了
-            localStorage.setItem('welcomeAgreed', 'true');
-            overlay.classList.add('hidden');
-        });
     },
     
     initializeVolume() {
