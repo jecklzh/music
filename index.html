@@ -17,7 +17,7 @@
   </header>
   <main>
     <div class="search-box card">
-      <input type="text" id="tag-search" placeholder="标签      ···//欢迎来到音乐厅！本站不公开传播，仅作私人使用。">
+      <input type="text" id="tag-search" placeholder="标签">
       <div class="search-results" id="search-results"></div>
     </div>
 
@@ -71,11 +71,12 @@
         <div class="tag-buttons" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0;">
           <button class="tag-btn" data-tag="relax">relax</button>
           <button class="tag-btn" data-tag="钢琴">钢琴</button>
+          <button class="tag-btn" data-tag="强劲">强劲</button>
         </div>
         <label style="font-weight: bold;">倒计时：</label>
         <select id="sleep-minutes" style="width: 100%; padding: 0.4rem; border-radius: 6px; margin-top: 0.25rem;">
           <option value="">时间</option>
-          <option value="1">测试 分钟</option>
+          <option value="1">测试</option>
           <option value="5">5 分钟</option>
           <option value="10">10 分钟</option>
           <option value="15">15 分钟</option>
@@ -89,5 +90,14 @@
     </div>
   </main>
 
-  <script src="player.js?v=2.5" defer></script> </body>
+  <script src="player.js?v=2.5" defer></script> 
+  <div id="welcome-overlay">
+    <div id="welcome-modal">
+      <h3>欢迎来到音乐厅！</h3>
+      <p>本站不公开传播，仅作私人使用，感谢配合！</p>
+      <button id="welcome-agree-btn">我已了解</button>
+    </div>
+  </div>
+
+</body>
 </html>
