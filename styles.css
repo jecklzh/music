@@ -223,13 +223,17 @@ button:hover { background: var(--hover-bg); }
   padding: 0 5px;
 }
 
+/* ========================================================== */
+/* 欢迎弹窗样式 */
+/* ========================================================== */
+
 #welcome-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* 半透明黑色遮罩 */
+  background-color: rgba(0, 0, 0, 0.7);
   z-index: 1000;
   display: flex;
   justify-content: center;
@@ -280,11 +284,14 @@ button:hover { background: var(--hover-bg); }
   transform: scale(1.02);
 }
 
-/* 用于JS控制显示和隐藏的辅助类 */
-.hidden {
+/* ========================================================== */
+/* 修复：使用ID + 类的组合，提高“隐藏”指令的优先级 */
+/* ========================================================== */
+#welcome-overlay.hidden {
   opacity: 0;
   pointer-events: none; /* 让元素在隐藏时不可点击 */
 }
-.hidden #welcome-modal {
+
+#welcome-overlay.hidden #welcome-modal {
   transform: scale(0.9);
 }
